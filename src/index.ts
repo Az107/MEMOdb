@@ -1,5 +1,6 @@
 import * as fs from "fs";
-import { Collection } from "./Collection";
+import { Collection } from "./Collection.js";
+import { existsSync } from "fs";
 
 export default class MEMdb {
   static instace: MEMdb;
@@ -15,35 +16,37 @@ export default class MEMdb {
   }
 
   private PATH = "./MEM.json";
-  private data:any = {};
+  private data: Map<string,Collection<any>> = new Map();
 
   addCollection<T>(name:string){
     let collection = new Collection<T>(this);
-    this.data[name] = collection;
+    this.data.set(name,collection);
   }
 
-  get<T>(name:string): Array<T> {
+  get<T>(name:string): Collection<T> {
     name = name.toLowerCase();
-    if (!this.data[name]) {
+    if (!this.data.get(name)) {
       throw new Error("collection do not exist");
     }
-    this.data[name]
-    return this.data[name];
+    return this.data.get(name) as Collection<T>;
   }
 
+  list(): string[] {
+    return Array.from(this.data.keys());
+  }
 
   delCollection(name:string) {
-    this.data[name] = undefined;
+    this.data.delete(name);
   }
 
-
-  dumb(path:string = this.PATH) {
+  dump(path:string = this.PATH) {
     let jsonData = JSON.stringify(this.data);
     fs.writeFileSync(path,jsonData);
   }
 
   load(path:string = this.PATH) {
-    console.log("load file")
+    console.log("load file");
+    if (!existsSync(path)) fs.writeFileSync(path,"{}");
     let jsonData = fs.readFileSync(path,'utf-8');
     this.data = JSON.parse(jsonData);
   }
@@ -73,3 +76,4 @@ class compressor {
   }
 
 }
+

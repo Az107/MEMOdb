@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "small and fast db",
   "main": "build/index.js",
+  "type": "module",
+  "types": "build/index.d.ts",
   "scripts": {
     "test": "jest"
   },
