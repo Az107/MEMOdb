@@ -1,22 +1,25 @@
 import * as fs from "fs";
-import { Collection } from "./Collection.js";
+import Collection  from "./Collection";
 import { existsSync } from "fs";
 
-export default class MEMdb {
-  static instace: MEMdb;
+export default class MEMOdb {
+  static version = "v0.01";
+  static instace: MEMOdb;
   private constructor(){
-    this.load()
+    this.data = new Map();
+    //this.load()
   }
 
   static getInstance() {
+    console.log("getting memodb instance");
     if (!this.instace) {
-      this.instace = new MEMdb();
+      this.instace = new MEMOdb();
     }
     return this.instace;
   }
 
   private PATH = "./MEM.json";
-  private data: Map<string,Collection<any>> = new Map();
+  private data: Map<string,Collection<any>>;
 
   addCollection<T>(name:string){
     let collection = new Collection<T>(this);

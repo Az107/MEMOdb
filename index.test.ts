@@ -1,4 +1,4 @@
-import MEMdb from "./src";
+import MEMOdb from "./src/index";
 
 test("dumb test", () => {
     console.log("ok");
@@ -6,18 +6,18 @@ test("dumb test", () => {
 })
 
 test("create test", () => {
-   const mem = MEMdb.getInstance();
+   const mem = MEMOdb.getInstance();
    expect(mem).toBeDefined();
 });
 
 test("create collection", ()=> {
-    const  mem = MEMdb.getInstance();
+    const  mem = MEMOdb.getInstance();
     mem.addCollection("test");
     expect(mem.get("test")).toBeDefined();
 });
 
 test("add item to collection", () => {
-    const mem = MEMdb.getInstance();
+    const mem = MEMOdb.getInstance();
     const oldLength = mem.get("test").length;
     const result = mem.get("test").push("test");
     expect(result).toBe(oldLength + 1);
@@ -25,9 +25,11 @@ test("add item to collection", () => {
 
 
 test("dump file", () => {
-    const mem = MEMdb.getInstance();
+    const mem = MEMOdb.getInstance();
     mem.dump();
 });
 
 beforeAll(() => {
 });
+
+export { };

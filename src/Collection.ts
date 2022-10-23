@@ -1,9 +1,9 @@
-import MEMdb from "./index.js";
+import MEMOdb from "./index";
 import { randomUUID } from "crypto";
 
-export class Collection<T> {
+export default class Collection<T> {
     private data: Array<CollectionItem<T>> = [];
-    private context: MEMdb;
+    private context: MEMOdb;
 
     public length = 0;
 
@@ -26,7 +26,7 @@ export class Collection<T> {
     }
  
 
-    constructor(context: MEMdb) {
+    constructor(context: MEMOdb) {
         this.context = context;
     }
 

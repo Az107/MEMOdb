@@ -22,46 +22,57 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
-class MEMdb {
-    static instace;
+const Collection_js_1 = __importDefault(require("./Collection.js"));
+const fs_1 = require("fs");
+class MEMOdb {
     constructor() {
-        this.load();
+        this.PATH = "./MEM.json";
+        this.data = new Map();
+        //this.load()
     }
     static getInstance() {
+        console.log("getting memodb instance");
         if (!this.instace) {
-            this.instace = new MEMdb();
+            this.instace = new MEMOdb();
         }
         return this.instace;
     }
-    PATH = "./MEM.json";
-    data = {};
     addCollection(name) {
-        let collection = [];
-        this.data[name] = collection;
+        let collection = new Collection_js_1.default(this);
+        this.data.set(name, collection);
     }
     get(name) {
         name = name.toLowerCase();
-        if (!this.data[name]) {
+        if (!this.data.get(name)) {
             throw new Error("collection do not exist");
         }
-        return this.data[name];
+        return this.data.get(name);
+    }
+    list() {
+        return Array.from(this.data.keys());
     }
     delCollection(name) {
-        this.data[name] = undefined;
+        this.data.delete(name);
     }
-    dumb(path = this.PATH) {
+    dump(path = this.PATH) {
         let jsonData = JSON.stringify(this.data);
         fs.writeFileSync(path, jsonData);
     }
     load(path = this.PATH) {
         console.log("load file");
+        if (!(0, fs_1.existsSync)(path))
+            fs.writeFileSync(path, "{}");
         let jsonData = fs.readFileSync(path, 'utf-8');
         this.data = JSON.parse(jsonData);
     }
 }
-exports.default = MEMdb;
+exports.default = MEMOdb;
+MEMOdb.version = "v0.01";
 class compressor {
     static compressObject(object) {
         // iterate object properties
