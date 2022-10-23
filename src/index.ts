@@ -11,7 +11,6 @@ export default class MEMOdb {
   }
 
   static getInstance() {
-    console.log("getting memodb instance");
     if (!this.instace) {
       this.instace = new MEMOdb();
     }
@@ -39,7 +38,8 @@ export default class MEMOdb {
   }
 
   delCollection(name:string) {
-    this.data.delete(name);
+    if (this.data.has(name))
+      this.data.delete(name);
   }
 
   dump(path:string = this.PATH) {
