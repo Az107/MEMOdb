@@ -6,7 +6,8 @@
   "type": "commonjs",
   "types": "build/index.d.ts",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc"
   },
   "author": "az107",
   "license": "MIT",

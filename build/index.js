@@ -27,7 +27,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
-const Collection_js_1 = __importDefault(require("./Collection.js"));
+const Collection_1 = __importDefault(require("./Collection"));
 const fs_1 = require("fs");
 class MEMOdb {
     constructor() {
@@ -36,14 +36,13 @@ class MEMOdb {
         //this.load()
     }
     static getInstance() {
-        console.log("getting memodb instance");
         if (!this.instace) {
             this.instace = new MEMOdb();
         }
         return this.instace;
     }
     addCollection(name) {
-        let collection = new Collection_js_1.default(this);
+        let collection = new Collection_1.default(this);
         this.data.set(name, collection);
     }
     get(name) {
@@ -57,39 +56,33 @@ class MEMOdb {
         return Array.from(this.data.keys());
     }
     delCollection(name) {
-        this.data.delete(name);
+        if (this.data.has(name))
+            this.data.delete(name);
     }
     dump(path = this.PATH) {
-        let jsonData = JSON.stringify(this.data);
+        const replacer = (key, value) => {
+            if (value instanceof Map) {
+                return { '__map__': Array.from(value.entries()) };
+            }
+            return value;
+        };
+        let jsonData = JSON.stringify(this.data, replacer);
         fs.writeFileSync(path, jsonData);
     }
     load(path = this.PATH) {
-        console.log("load file");
         if (!(0, fs_1.existsSync)(path))
-            fs.writeFileSync(path, "{}");
+            this.dump(path);
         let jsonData = fs.readFileSync(path, 'utf-8');
-        this.data = JSON.parse(jsonData);
+        const reviver = (key, value) => {
+            if (typeof value === 'object' && value !== null && '__map__' in value) {
+                return new Map(value['__map__']);
+            }
+            return value;
+        };
+        this.data = JSON.parse(jsonData, reviver);
+        if (!(this.data instanceof Map))
+            throw new Error("invalid data!");
     }
 }
 exports.default = MEMOdb;
 MEMOdb.version = "v0.01";
-class compressor {
-    static compressObject(object) {
-        // iterate object properties
-        Object.keys(object).forEach(property => {
-            //create new array of ids
-            let ids = [];
-            //check if property is and array
-            if (Array.isArray(property)) {
-                property.map((e) => {
-                    //check if element in the array has a property id
-                    if (e["id"]) {
-                        //add id to ids array
-                        ids.push(e["id"]);
-                    }
-                });
-                object;
-            }
-        });
-    }
-}

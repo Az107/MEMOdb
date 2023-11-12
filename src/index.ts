@@ -43,40 +43,28 @@ export default class MEMOdb {
   }
 
   dump(path:string = this.PATH) {
-    let jsonData = JSON.stringify(this.data);
+    const replacer = (key: string, value: any) => {
+      if (value instanceof Map) {
+        return { '__map__': Array.from(value.entries()) };
+      }
+      return value;
+    };
+    let jsonData = JSON.stringify(this.data,replacer);
     fs.writeFileSync(path,jsonData);
   }
 
   load(path:string = this.PATH) {
-    console.log("load file");
-    if (!existsSync(path)) fs.writeFileSync(path,"{}");
+    
+    if (!existsSync(path)) this.dump(path);
     let jsonData = fs.readFileSync(path,'utf-8');
-    this.data = JSON.parse(jsonData);
-  }
-
-}
-
-class compressor {
-
-  static compressObject(object: Object) {
-    // iterate object properties
-    Object.keys(object).forEach(property => {
-      //create new array of ids
-      let ids = [];
-      //check if property is and array
-      if (Array.isArray(property)){
-        property.map((e) => {
-          //check if element in the array has a property id
-          if (e["id"]) {
-            //add id to ids array
-            ids.push(e["id"]);
-          }
-        });
-        object
+    const reviver = (key: string, value: any) => {
+      if (typeof value === 'object' && value !== null && '__map__' in value) {
+        return new Map(value['__map__']);
       }
-
-    });
+      return value;
+    };
+    this.data =  JSON.parse(jsonData,reviver);
+    if (!(this.data instanceof Map)) throw new Error("invalid data!");
   }
 
 }
-
