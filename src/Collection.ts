@@ -24,7 +24,7 @@ export default class Collection<T> {
         const collectionItem: CollectionItem<T> = {
             ...item,
             ID: id || randomUUID(),
-            getOriginal: () => getOriginal(collectionItem)
+            getOriginal: () => getOriginal<T>(collectionItem)
          };
          this.data.push(collectionItem)
          this.length = this.data.length;
@@ -54,7 +54,7 @@ type CollectionItem<T> = T & {
 }
 
 const getOriginal = <T>(item: CollectionItem<T>): T => {
-    const { ID, ...original } = item;
+    const { ID, getOriginal, ...original } = item;
     return original as T;
 }
 
