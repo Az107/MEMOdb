@@ -3,7 +3,7 @@ import Collection  from "./Collection";
 import { existsSync } from "fs";
 
 export default class MEMOdb {
-  static version = "v0.01";
+  static version = "v0.02";
   static instace: MEMOdb;
   private constructor(){
     this.data = new Map();
