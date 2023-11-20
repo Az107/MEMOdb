@@ -18,6 +18,7 @@ export default class Collection<T> {
 
 
     add(item: T, id?: ID): ID {
+        if (typeof item !== "object") throw new Error("item must be an object");
         // for (const property in item ) {
         //     //item[property] = this.add<>(property);
         // }
@@ -29,7 +30,6 @@ export default class Collection<T> {
          this.data.push(collectionItem)
          this.length = this.data.length;
          return collectionItem.ID;
-         
     }
 
     getById(id: string): CollectionItem<T> | undefined {
@@ -40,6 +40,14 @@ export default class Collection<T> {
     getAll(): T[] {
         return this.data.map(item => item.getOriginal());
     }
+
+    filter(callbackfn: (value: T, index: number, array: T[]) => unknown, thisArg?: any): T[] {
+        return this.data.map(item => item.getOriginal()).filter(callbackfn, thisArg);
+    }
+    //example of use 
+    // let result = collection.filter((item,index,array) => {
+    //     return item.name === "John";
+    // });
  
 
     constructor(context: MEMOdb) {

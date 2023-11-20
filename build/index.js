@@ -85,4 +85,4 @@ class MEMOdb {
     }
 }
 exports.default = MEMOdb;
-MEMOdb.version = "v0.01";
+MEMOdb.version = "v0.02";
