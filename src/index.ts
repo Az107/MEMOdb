@@ -59,7 +59,16 @@ export default class MEMOdb {
     let jsonData = fs.readFileSync(path,'utf-8');
     const reviver = (key: string, value: any) => {
       if (typeof value === 'object' && value !== null && '__map__' in value) {
-        return new Map(value['__map__']);
+        let map = new Map(value['__map__']);
+        // convert each map value to a collection
+        map.forEach((v: any, k: any) => {
+          let collection = new Collection(this);
+          v.data.forEach((item:any) => {
+            collection.add(item,item.ID);
+          });
+          map.set(k,collection);
+        });
+        return map;
       }
       return value;
     };
