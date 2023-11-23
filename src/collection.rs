@@ -1,56 +1,74 @@
+use std::collections::HashMap;
 
-enum dataType {
-  String,
-  Number,
-  Boolean,
-  Array,
-  Object,
-  Null,
+
+#[derive(PartialEq)]
+pub enum DataType {
+  Id(u32),
+  Text(String),
+  Number(i32),
+  Boolean(bool),
+  Date(String),
+  Array(Vec<DataType>),
+
 }
 
-struct Collection {
-  //create a data field with a vector of hashmaps
-  data: Vec<HashMap<String, dataType>>,
+pub type Document = HashMap<String, DataType>;
+
+pub struct Collection {
+  name: String,
+  data: Vec<Document>,
 }
 
 
 
-
-impl<T> Collection<T> {
-  fn new() -> Self {
+impl Collection {
+  fn new(name: String) -> Self {
     Collection {
+      name: name,
       data: Vec::new()
     }
   }
 
-  fn add(&mut self, value: T) {
-    let id = self.data.len() as u32;
-    self.data.push(CollectionItem { id, value });
+  fn add(&mut self, document: Document) {
+    self.data.push(document);
   }
 
-  fn get(&self, id: u32) -> Option<&T> {
-    self.data.get(id as usize).map(|item| &item.value)
+  fn get(&self, index: usize) -> Option<&Document> {
+    self.data.get(index)
   }
 
-  fn list(&self) -> Vec<&T> {
-    self.data.iter().map(|item| &item.value).collect()
+  fn getAll(&self) -> &Vec<Document> {
+    &self.data
   }
 
-  fn del(&mut self, id: u32) {
-    self.data.remove(id as usize);
+  fn getById(&self, id: u32) -> Option<&Document> {
+    let Id = DataType::Id(id);
+    self.data.iter().find(|&x| x.get("id").unwrap() == &Id)
   }
 
-  fn update(&mut self, id: u32, value: T) {
-    self.data[id as usize].value = value;
+  fn remove(&mut self, index: usize) -> Document {
+    self.data.remove(index)
   }
 
-  fn find(&self, predicate: fn(&T) -> bool) -> Option<&T> {
-    self.data.iter().find(|item| predicate(&item.value)).map(|item| &item.value)
+}
+
+
+//TEST
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_collection() {
+    let mut collection = Collection::new("users".to_string());
+    let mut document = Document::new();
+    document.insert("id".to_string(), DataType::Id(1));
+    document.insert("name".to_string(), DataType::Text("John".to_string()));
+    document.insert("age".to_string(), DataType::Number(25));
+    document.insert("isMarried".to_string(), DataType::Boolean(false));
+    document.insert("birthDate".to_string(), DataType::Date("1995-01-01".to_string()));
+    collection.add(document);
+    assert!(collection.get(0).is_some());
   }
-
-  //example of find 
-  //collection.find(|item| item.id == 1);
-  // example of a dog collection 
-
 }
 
