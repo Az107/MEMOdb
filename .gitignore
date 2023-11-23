@@ -3,3 +3,8 @@ node_modules/
 yarn.lock
 MEM.json
 build/
+target
+index.node
+**/node_modules
+**/.DS_Store
+npm-debug.log*

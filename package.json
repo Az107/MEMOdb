@@ -6,12 +6,17 @@
   "type": "commonjs",
   "types": "build/index.d.ts",
   "scripts": {
-    "test": "jest",
-    "build": "tsc"
+    "test:js": "jest",
+    "build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
+    "build-debug": "npm run build --",
+    "build-release": "npm run build -- --release",
+    "install": "npm run build-release",
+    "test": "cargo test"
   },
   "author": "az107",
   "license": "MIT",
   "devDependencies": {
+    "cargo-cp-artifact": "^0.1",
     "@babel/plugin-transform-modules-commonjs": "^7.19.6",
     "@types/jest": "^29.1.2",
     "@types/node": "^18.18.10",
