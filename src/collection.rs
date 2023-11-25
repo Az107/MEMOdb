@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-
 #[derive(PartialEq)]
 pub enum DataType {
   Id(u32),
@@ -15,21 +14,27 @@ pub enum DataType {
 pub type Document = HashMap<String, DataType>;
 
 pub struct Collection {
-  name: String,
-  data: Vec<Document>,
+  pub name: String,
+  lastId: u32,
+  pub(crate) data: Vec<Document>,
 }
 
 
 
 impl Collection {
-  fn new(name: String) -> Self {
+  pub fn new(name: String) -> Self {
     Collection {
       name: name,
+      lastId: 0,
       data: Vec::new()
     }
   }
 
   fn add(&mut self, document: Document) {
+    let mut document = document;
+    if !document.contains_key("id") {
+     document.insert("ID".to_string(), DataType::Id(self.lastId));
+    }
     self.data.push(document);
   }
 
