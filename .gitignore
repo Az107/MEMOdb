@@ -10,3 +10,4 @@ index.node
 npm-debug.log*
 Cargo.lock
 build/
+build/*
