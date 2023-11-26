@@ -2,7 +2,7 @@
   "name": "memodb",
   "version": "1.0.0",
   "description": "small and fast db",
-  "main": "build/index.js",
+  "main": "index.js",
   "type": "commonjs",
   "types": "build/index.d.ts",
   "scripts": {

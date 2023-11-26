@@ -20,7 +20,7 @@ impl MEMOdb {
         self.collections.push(collection);
     }
 
-    fn getCollection(&self, name: String) -> Option<&Collection> {
+    pub fn getCollection(&self, name: String) -> Option<&Collection> {
         self.collections.iter().find(|&x| x.name == name)
     }
 
@@ -28,7 +28,7 @@ impl MEMOdb {
         &self.collections
     }
 
-    fn getCollectionList(&self) -> Vec<String> {
+    pub fn getCollectionList(&self) -> Vec<String> {
         let mut collectionList: Vec<String> = Vec::new();
         for collection in self.collections.iter() {
             collectionList.push(collection.name.clone());
