@@ -1,13 +1,20 @@
 const _memodb = require('./index.node');
 
 //MEMOdb js wrapper
-
-export default class MEMOdb {
+ class MEMOdb {
   static version = "v0.02";
   instance = null;
 
   constructor() {
-    this.instance = new _memodb.new();
+    this.instance = _memodb.new();
+  }
+
+  list() {
+    return this.instance.getCollectionList(this.instance);
+  }
+
+  getAll() {
+    return this.instance.getAll(this.instance);
   }
 
   get(name) {
@@ -18,5 +25,6 @@ export default class MEMOdb {
     return this.instance.createCollection(this.instance, name);
   }
 
-
 }
+
+exports.MEMOdb = MEMOdb;

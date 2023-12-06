@@ -15,28 +15,28 @@ impl MEMOdb {
         }
     }
 
-    pub fn createCollection(&mut self, name: String) {
+    pub fn create_collection(&mut self, name: String) {
         let collection = Collection::new(name);
         self.collections.push(collection);
     }
 
-    pub fn getCollection(&self, name: String) -> Option<&Collection> {
+    pub fn get_collection(&self, name: String) -> Option<&Collection> {
         self.collections.iter().find(|&x| x.name == name)
     }
 
-    pub fn getAllCollections(&self) -> &Vec<Collection> {
+    pub fn get_all_collections(&self) -> &Vec<Collection> {
         &self.collections
     }
 
-    pub fn getCollectionList(&self) -> Vec<String> {
-        let mut collectionList: Vec<String> = Vec::new();
+    pub fn get_collection_list(&self) -> Vec<String> {
+        let mut collection_list: Vec<String> = Vec::new();
         for collection in self.collections.iter() {
-            collectionList.push(collection.name.clone());
+            collection_list.push(collection.name.clone());
         }
-        collectionList
+        collection_list
     }
 
-    fn removeCollection(&mut self, name: String) -> Collection {
+    fn remove_collection(&mut self, name: String) -> Collection {
         let index = self
             .collections
             .iter()
@@ -55,17 +55,17 @@ mod tests {
     #[test]
     fn test_memodb() {
         let mut memodb = crate::memodb::MEMOdb::new();
-        memodb.createCollection("users".to_string());
-        memodb.createCollection("posts".to_string());
+        memodb.create_collection("users".to_string());
+        memodb.create_collection("posts".to_string());
         assert_eq!(memodb.collections.len(), 2);
         assert_eq!(memodb.collections[0].name, "users");
         assert_eq!(memodb.collections[1].name, "posts");
-        assert_eq!(memodb.getCollection("users".to_string()).unwrap().name, "users");
-        assert_eq!(memodb.getCollection("posts".to_string()).unwrap().name, "posts");
-        assert_eq!(memodb.getAllCollections().len(), 2);
-        assert_eq!(memodb.removeCollection("users".to_string()).name, "users");
+        assert_eq!(memodb.get_collection("users".to_string()).unwrap().name, "users");
+        assert_eq!(memodb.get_collection("posts".to_string()).unwrap().name, "posts");
+        assert_eq!(memodb.get_all_collections().len(), 2);
+        assert_eq!(memodb.remove_collection("users".to_string()).name, "users");
         assert_eq!(memodb.collections.len(), 1);
-        assert_eq!(memodb.removeCollection("posts".to_string()).name, "posts");
+        assert_eq!(memodb.remove_collection("posts".to_string()).name, "posts");
         assert_eq!(memodb.collections.len(), 0);
     }
 }
