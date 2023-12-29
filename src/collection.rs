@@ -30,7 +30,7 @@ impl Collection {
     }
   }
 
-  fn add(&mut self, document: Document) {
+  pub fn add(&mut self, document: Document) {
     let mut document = document;
     if !document.contains_key("id") {
      document.insert("ID".to_string(), DataType::Id(self.lastId));

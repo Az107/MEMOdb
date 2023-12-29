@@ -27,4 +27,10 @@ const _memodb = require('./index.node');
 
 }
 
+class Collection {
+  static instance = null;
+  
+
+}
+
 exports.MEMOdb = MEMOdb;
