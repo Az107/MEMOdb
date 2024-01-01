@@ -8,6 +8,7 @@ pub enum DataType {
   Boolean(bool),
   Date(String),
   Array(Vec<DataType>),
+  Document(Document),
 
 }
 
@@ -15,7 +16,7 @@ pub type Document = HashMap<String, DataType>;
 
 pub struct Collection {
   pub name: String,
-  lastId: u32,
+  last_id: u32,
   pub(crate) data: Vec<Document>,
 }
 
@@ -25,7 +26,7 @@ impl Collection {
   pub fn new(name: String) -> Self {
     Collection {
       name: name,
-      lastId: 0,
+      last_id: 0,
       data: Vec::new()
     }
   }
@@ -33,7 +34,8 @@ impl Collection {
   pub fn add(&mut self, document: Document) {
     let mut document = document;
     if !document.contains_key("id") {
-     document.insert("ID".to_string(), DataType::Id(self.lastId));
+      self.last_id += 1;
+     document.insert("ID".to_string(), DataType::Id(self.last_id));
     }
     self.data.push(document);
   }

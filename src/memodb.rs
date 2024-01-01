@@ -20,8 +20,9 @@ impl MEMOdb {
         self.collections.push(collection);
     }
 
-    pub fn get_collection(&self, name: String) -> Option<&Collection> {
-        self.collections.iter().find(|&x| x.name == name)
+    pub fn get_collection(&mut self, name: String) -> Option<&mut Collection> {
+        //return a mutable reference to collection
+        self.collections.iter_mut().find(|x| x.name == name)
     }
 
     pub fn get_all_collections(&self) -> &Vec<Collection> {

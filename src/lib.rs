@@ -1,5 +1,5 @@
-use std::cell::RefCell;
-use neon::prelude::*;
+use std::{cell::RefCell, mem, ptr::null};
+use neon::{prelude::*, types::buffer::Ref};
 // import local module collection.rs
 mod collection;
 mod memodb;
@@ -7,43 +7,85 @@ use collection::{Collection, Document, DataType};
 use memodb::MEMOdb;
 
 type CapsuledMemodb = JsBox<RefCell<MEMOdb>>;
-type CapsuledCollection = JsBox<RefCell<Collection>>;
 
 
+pub struct FinalizableCollection(RefCell<Collection>);
 
+impl Finalize for FinalizableCollection {}
 
 fn document_to_js_object<'a>(cx: &mut FunctionContext<'a>, document: &Document) -> JsResult<'a, JsObject> {
     let js_document: Handle<'_, JsObject> = cx.empty_object();
     for (k, v) in document {
         let key = cx.string(k.as_str());
-        js_document.set(cx, key,  cx.null())?; 
+        match v {
+            DataType::Number(n) => {
+                let value = cx.number(*n);
+                js_document.set(cx, key, value)?;
+            },
+            DataType::Id(n) => {
+                let value = cx.number(*n);
+                js_document.set(cx, key, value)?;
+            },
+            DataType::Text(n) => {
+                let value = cx.string(n);
+                js_document.set(cx, key, value)?;
+            },
+            DataType::Boolean(n) => {
+                let value = cx.boolean(*n);
+                js_document.set(cx, key, value)?;
+            },
+            DataType::Date(n) => {
+                let value = cx.string(n);
+                js_document.set(cx, key, value)?;
+            },
+            DataType::Array(n) => {
+                let value = cx.empty_array();
+                js_document.set(cx, key, value)?;
+            },
+            DataType::Document(_) => todo!()
+        };
     }
     Ok(js_document)
 }
 
 fn js_object_to_document<'a>(cx: &mut FunctionContext<'a>, js_object: &JsObject) -> Result<Document, & 'static str> {
     let mut document: Document = Document::new();
+    //iter over js_object properties
     let keys = js_object.get_own_property_names(cx).unwrap().to_vec(cx).unwrap();
     for key in keys {
-        document.insert("".to_string(), collection::DataType::Text("".to_string())); //TODO get real value and cast to DataType
+        let key_name = key.downcast::<JsString, _>(cx).unwrap().value(cx);
+        let value = js_object.get_value(cx, key).unwrap();
+        //check type of value
+        if value.is_a::<JsNumber, _>(cx) {
+            let value = value.downcast::<JsNumber, _>(cx).unwrap().value(cx);
+            document.insert(key_name, DataType::Number(value as i32));
+        } else if value.is_a::<JsString, _>(cx) {
+            let value = value.downcast::<JsString, _>(cx).unwrap().value(cx);
+            document.insert(key_name, DataType::Text(value));
+        } else if value.is_a::<JsBoolean, _>(cx) {
+            let value = value.downcast::<JsBoolean, _>(cx).unwrap().value(cx);
+            document.insert(key_name, DataType::Boolean(value));
+        } else if value.is_a::<JsArray, _>(cx) {
+            let value = value.downcast::<JsArray, _>(cx).unwrap().to_vec(cx).unwrap();
+            let mut value2: Vec<DataType> = Vec::new();
+            for element in value {
+                let element = element.downcast::<JsObject, _>(cx).unwrap();
+                let element = js_object_to_document(cx, &element);
+                if element.is_err() {
+                    continue;
+                }
+                value2.push(DataType::Document(element.unwrap()));
+            }
+            document.insert(key_name, DataType::Array(value2));
+        } else {
+            return Err("Unknown type");
+        }
+
     }
+
     Ok(document)
 }
 
-impl Finalize for Collection {}
-
-impl Collection {
-    
-    fn to_object<'a>(&mut self, cx: &mut FunctionContext<'a>) -> JsResult<'a, JsObject> {
-        let js_collection: Handle<'_, JsObject> = cx.empty_object();
-        let name = cx.string(self.name.as_str());
-        //let instance : CapsuledCollection = cx.boxed(RefCell::new(self));
-        js_collection.set(cx, "name", name)?;
-        js_collection.set(cx, "instance", name)?;
-        
-        Ok(js_collection)
-    }   
-}
 
 
 impl Finalize for MEMOdb {}
@@ -62,27 +104,6 @@ fn js_create_collection(mut cx: FunctionContext) -> JsResult<JsUndefined> {
     Ok(cx.undefined())
 }
 
-fn js_get_collection(mut cx: FunctionContext) -> JsResult<JsObject> {
-    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
-    let memodb = _memodb.borrow();
-    let name = cx.argument::<JsString>(1)?.value(&mut cx);
-    let collection = memodb.get_collection(name).unwrap();
-    let js_collection = collection.to_object(&mut cx)?;
-    Ok(js_collection)
-}
-
-fn js_get_all_collections(mut cx: FunctionContext) -> JsResult<JsArray> {
-    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
-    let memodb = _memodb.borrow();
-    let collections = memodb.get_all_collections();
-    let js_collections: Handle<'_, JsArray> = cx.empty_array();
-    for (i, collection) in collections.iter().enumerate() {
-        let js_collection = collection.to_object(&mut cx)?;
-        js_collections.set(&mut cx, i as u32, js_collection)?;
-    }
-    Ok(js_collections)
-}
-
 fn js_get_collection_list(mut cx: FunctionContext) -> JsResult<JsArray> {
     let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
     let memodb = _memodb.borrow();
@@ -98,9 +119,15 @@ fn js_get_collection_list(mut cx: FunctionContext) -> JsResult<JsArray> {
 // Collection
 
 fn js_collection_add(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-    let _collection  = cx.argument::<CapsuledCollection>(0)?;
-    let mut collection = _collection.borrow_mut();
-    let document = cx.argument::<JsObject>(1)?;
+    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
+    let mut memodb = _memodb.borrow_mut();
+    let _collection  = cx.argument::<JsString>(1)?.value(&mut cx);
+    let collection = memodb.get_collection(_collection);
+    if collection.is_none() {
+        return Err(cx.throw_error("Collection not found").unwrap());
+    }
+    let collection = collection.unwrap();
+    let document = cx.argument::<JsObject>(2)?;
     let document = js_object_to_document(&mut cx, &document);
     collection.add(document.unwrap());
     Ok(cx.undefined())
@@ -111,9 +138,9 @@ fn js_collection_add(mut cx: FunctionContext) -> JsResult<JsUndefined> {
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
     cx.export_function("new", js_new_memodb)?;
     cx.export_function("createCollection", js_create_collection)?;
-    cx.export_function("getCollection", js_get_collection)?;
-    cx.export_function("getAllCollections", js_get_all_collections)?;
     cx.export_function("getCollectionList", js_get_collection_list)?;
 
     Ok(())
 }
+
+
