@@ -10,26 +10,36 @@ const _memodb = require('./index.node');
   }
 
   list() {
-    return this.instance.getCollectionList(this.instance);
+    return _memodb.getCollectionList(this.instance);
   }
 
   getAll() {
-    return this.instance.getAll(this.instance);
+    return _memodb.getAll(this.instance);
   }
 
   get(name) {
-    return this.instance.getCollection(this.instance, name);
+    return new Collection(name, this.instance);
   }
 
   create(name) {
-    return this.instance.createCollection(this.instance, name);
+    return _memodb.createCollection(this.instance, name);
   }
 
 }
 
 class Collection {
-  static instance = null;
-  
+    constructor(name, dbInstance) {
+        this.name = name;
+        this.instance = dbInstance;
+    }
+
+    add(data) {
+        _memodb.collectionAdd(this.instance, this.name, data);
+    }
+
+    get(index) {
+        return _memodb.collectionGet(this.instance, this.name, index);
+    }
 
 }
 

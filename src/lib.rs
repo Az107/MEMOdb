@@ -133,12 +133,33 @@ fn js_collection_add(mut cx: FunctionContext) -> JsResult<JsUndefined> {
     Ok(cx.undefined())
 }
 
+fn js_collection_get(mut cx: FunctionContext) -> JsResult<JsObject> {
+    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
+    let mut memodb = _memodb.borrow_mut();
+    let _collection  = cx.argument::<JsString>(1)?.value(&mut cx);
+    let collection = memodb.get_collection(_collection);
+    if collection.is_none() {
+        return Err(cx.throw_error("Collection not found").unwrap());
+    }
+    let collection = collection.unwrap();
+    let index = cx.argument::<JsNumber>(2)?.value(&mut cx);
+    let document = collection.get(index as usize);
+    if document.is_none() {
+        return Err(cx.throw_error("Document not found").unwrap());
+    }
+    let document = document.unwrap();
+    let js_document = document_to_js_object(&mut cx, &document);
+    Ok(js_document.unwrap())
+}
+
 
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
     cx.export_function("new", js_new_memodb)?;
     cx.export_function("createCollection", js_create_collection)?;
     cx.export_function("getCollectionList", js_get_collection_list)?;
+    cx.export_function("collectionAdd", js_collection_add)?;
+    cx.export_function("collectionGet", js_collection_get)?;
 
     Ok(())
 }

@@ -40,7 +40,11 @@ impl Collection {
     self.data.push(document);
   }
 
-  fn get(&self, index: usize) -> Option<&Document> {
+  pub fn count(&self) -> usize {
+    self.data.len()
+  }
+
+  pub fn get(&self, index: usize) -> Option<&Document> {
     self.data.get(index)
   }
 
