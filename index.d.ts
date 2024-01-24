@@ -3,7 +3,7 @@ type memoDocument = Map<string, any>
 
 type Collection = {
     name: string
-    data: memoDocument[]
+    
 }
 
 declare module 'index.js' {

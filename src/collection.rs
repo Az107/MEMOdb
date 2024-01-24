@@ -40,21 +40,34 @@ impl Collection {
     self.data.push(document);
   }
 
+  pub fn rm(&mut self, id: u32) {
+    //self.data.remove(index);
+    let index = self.get_index(id);
+    self.data.swap_remove(index);
+  }
+
   pub fn count(&self) -> usize {
     self.data.len()
   }
 
-  pub fn get(&self, index: usize) -> Option<&Document> {
+  fn _get(&self, index: usize) -> Option<&Document> {
     self.data.get(index)
+  }
+
+  fn get_index(&self, id: u32) -> usize {
+    let id = DataType::Id(id);
+    self.data.iter().position(|&x| x.get("id").unwrap() == &id).unwrap()
+
   }
 
   fn getAll(&self) -> &Vec<Document> {
     &self.data
+    
   }
 
-  fn getById(&self, id: u32) -> Option<&Document> {
-    let Id = DataType::Id(id);
-    self.data.iter().find(|&x| x.get("id").unwrap() == &Id)
+  pub fn get(&self, id: u32) -> Option<&Document> {
+    let id = DataType::Id(id);
+    self.data.iter().find(|&x| x.get("id").unwrap() == &id)
   }
 
   fn remove(&mut self, index: usize) -> Document {
@@ -79,7 +92,7 @@ mod tests {
     document.insert("isMarried".to_string(), DataType::Boolean(false));
     document.insert("birthDate".to_string(), DataType::Date("1995-01-01".to_string()));
     collection.add(document);
-    assert!(collection.get(0).is_some());
+    assert!(collection._get(0).is_some());
   }
 }
 
