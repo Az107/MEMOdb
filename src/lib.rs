@@ -143,7 +143,7 @@ fn js_collection_get(mut cx: FunctionContext) -> JsResult<JsObject> {
     }
     let collection = collection.unwrap();
     let index = cx.argument::<JsNumber>(2)?.value(&mut cx);
-    let document = collection.get(index as usize);
+    let document = collection.get(index as u32);
     if document.is_none() {
         return Err(cx.throw_error("Document not found").unwrap());
     }

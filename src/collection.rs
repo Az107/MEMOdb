@@ -17,7 +17,7 @@ pub type Document = HashMap<String, DataType>;
 pub struct Collection {
   pub name: String,
   last_id: u32,
-  pub(crate) data: Vec<Document>,
+  pub(crate) data: Vec<Document>
 }
 
 
@@ -56,14 +56,14 @@ impl Collection {
 
   fn get_index(&self, id: u32) -> usize {
     let id = DataType::Id(id);
-    self.data.iter().position(|&x| x.get("id").unwrap() == &id).unwrap()
+    self.data.iter().position(|x| x.get("id").unwrap() == &id).unwrap()
 
   }
 
   fn getAll(&self) -> &Vec<Document> {
     &self.data
     
-  }
+   }
 
   pub fn get(&self, id: u32) -> Option<&Document> {
     let id = DataType::Id(id);
