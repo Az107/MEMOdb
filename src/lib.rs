@@ -152,6 +152,24 @@ fn js_collection_get(mut cx: FunctionContext) -> JsResult<JsObject> {
     Ok(js_document.unwrap())
 }
 
+fn js_collection_get_all(mut cx: FunctionContext) -> JsResult<JsArray> {
+    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
+    let mut memodb = _memodb.borrow_mut();
+    let _collection  = cx.argument::<JsString>(1)?.value(&mut cx);
+    let collection = memodb.get_collection(_collection);
+    if collection.is_none() {
+        return Err(cx.throw_error("Collection not found").unwrap());
+    }
+    let collection = collection.unwrap();
+    let documents = collection.getAll();
+    let js_documents: Handle<'_, JsArray> = cx.empty_array();
+    for (i, document) in documents.iter().enumerate() {
+        let js_document = document_to_js_object(&mut cx, &document);
+        js_documents.set(&mut cx, i as u32, js_document.unwrap())?;
+    }
+    Ok(js_documents)
+}
+
 
 #[neon::main]
 fn main(mut cx: ModuleContext) -> NeonResult<()> {
@@ -160,6 +178,7 @@ fn main(mut cx: ModuleContext) -> NeonResult<()> {
     cx.export_function("getCollectionList", js_get_collection_list)?;
     cx.export_function("collectionAdd", js_collection_add)?;
     cx.export_function("collectionGet", js_collection_get)?;
+    cx.export_function("collectionGetAll", js_collection_get_all)?;
 
     Ok(())
 }

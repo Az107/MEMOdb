@@ -14,7 +14,9 @@ const _memodb = require('./index.node');
   }
 
   getAll() {
-    return _memodb.getAll(this.instance);
+    return this.list().map((collection) => {
+      return new Collection(collection, this.instance);
+    });
   }
 
   get(name) {
@@ -39,6 +41,10 @@ class Collection {
 
     get(index) {
         return _memodb.collectionGet(this.instance, this.name, index);
+    }
+
+    getAll() {
+        return _memodb.collectionGetAll(this.instance, this.name);
     }
 
 }

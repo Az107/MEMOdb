@@ -14,10 +14,21 @@ pub enum DataType {
 
 pub type Document = HashMap<String, DataType>;
 
+impl DataType {
+  fn id(&self) -> u32 {
+    match self {
+      DataType::Id(id) => *id,
+      _ => panic!("Not an ID"),
+    }
+  }
+}
+
+
 pub struct Collection {
   pub name: String,
   last_id: u32,
-  pub(crate) data: Vec<Document>
+  pub(crate) data: Vec<Document>,
+  //idTable: HashMap<u32, usize>
 }
 
 
@@ -27,15 +38,16 @@ impl Collection {
     Collection {
       name: name,
       last_id: 0,
-      data: Vec::new()
+      data: Vec::new(),
+      //idTable: HashMap::new()
     }
   }
 
   pub fn add(&mut self, document: Document) {
     let mut document = document;
-    if !document.contains_key("id") {
+    if !document.contains_key("ID") {
       self.last_id += 1;
-     document.insert("ID".to_string(), DataType::Id(self.last_id));
+      document.insert("ID".to_string(), DataType::Id(self.last_id));
     }
     self.data.push(document);
   }
@@ -56,18 +68,17 @@ impl Collection {
 
   fn get_index(&self, id: u32) -> usize {
     let id = DataType::Id(id);
-    self.data.iter().position(|x| x.get("id").unwrap() == &id).unwrap()
-
+    self.data.iter().position(|x| x.get("ID").unwrap() == &id).unwrap()
   }
 
-  fn getAll(&self) -> &Vec<Document> {
+  pub fn getAll(&self) -> &Vec<Document> {
     &self.data
     
    }
 
   pub fn get(&self, id: u32) -> Option<&Document> {
     let id = DataType::Id(id);
-    self.data.iter().find(|&x| x.get("id").unwrap() == &id)
+    self.data.iter().find(|&x| x.get("ID").unwrap() == &id)
   }
 
   fn remove(&mut self, index: usize) -> Document {
