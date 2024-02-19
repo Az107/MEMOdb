@@ -1,10 +1,12 @@
 use std::{cell::RefCell, mem, ptr::null};
 use neon::{prelude::*, types::buffer::Ref};
 // import local module collection.rs
+mod dataType;
 mod collection;
 mod memodb;
-use collection::{Collection, Document, DataType};
+use collection::{Collection, Document};
 use memodb::MEMOdb;
+use dataType::DataType;
 
 type CapsuledMemodb = JsBox<RefCell<MEMOdb>>;
 

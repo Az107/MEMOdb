@@ -2,29 +2,35 @@ const {MEMOdb} = require("../index.js");
 
 const memodb = new MEMOdb();
 
-function benchmark_write(value) {
+
+//make a baisc benchmark with a callback 
+function benchmark(value, callback) {
+  console.log(`Benchmark write with ${value} repetitions.`);
   const repetitions = Math.pow(10, value);
-  console.time("Write");
+  console.time("Benchmark");
+  callback(repetitions);
+  console.timeEnd("Benchmark");
+}
+
+function benchmark_write(repetitions) {
+  const memodb = new MEMOdb();
   memodb.create("test");
   const collection = memodb.get("test");
   for (let i = 0; i < repetitions; i++) {
     collection.add({name: "test", index: i});
   }
-  console.timeEnd("Write");
 }
 
-function benchmark_wirte_random(value) {
-  const repetitions = Math.pow(10, value);
-  console.time("Write Random");
+function benchmark_wirte_random(repetitions) {
   memodb.create("random");
   const collection = memodb.get("random");
   for (let i = 0; i < repetitions; i++) {
     collection.add({name: "test", index: Math.random()});
   }
-  console.timeEnd("Write Random");
 }
 
 function benchmark_read(value) {
+  console.log(`Benchmark read with ${value} repetitions.`);
   const repetitions = Math.pow(10, value);
   console.time("Read");
   const collection = memodb.get("test");
@@ -34,6 +40,6 @@ function benchmark_read(value) {
   console.timeEnd("Read");
 }
 
-benchmark_write(5);
+benchmark(5, benchmark_write);
 //benchmark_wirte_random();
 //benchmark_read();

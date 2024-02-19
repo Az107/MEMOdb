@@ -2,7 +2,7 @@ const _memodb = require('./index.node');
 
 //MEMOdb js wrapper
 class MEMOdb {
-  static version = "v0.02";
+  static version = "v0.03";
   instance = null;
 
   constructor() {
@@ -25,6 +25,10 @@ class MEMOdb {
 
   create(name) {
     return _memodb.createCollection(this.instance, name);
+  }
+
+  dump() {
+    console.log("Not implemented yet");
   }
 
 }

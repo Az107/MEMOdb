@@ -1,20 +1,32 @@
 use std::collections::HashMap;
-
-#[derive(PartialEq)]
-pub enum DataType {
-  Id(u32),
-  Text(String),
-  Number(i32),
-  Boolean(bool),
-  Date(String),
-  Array(Vec<DataType>),
-  Document(Document),
-
-}
+use crate::dataType::DataType;
 
 const ID: &str = "ID";
 
+//create a trait based on HashMap<String,DataType>
+// and impl especial methods for it
 pub type Document = HashMap<String, DataType>;
+
+
+pub trait Document_struct {
+  fn from_document(document: &Document) -> Self;
+  fn to_document(&self) -> Document;
+}
+
+
+//create a macro to create a document
+#[macro_export]
+macro_rules! doc {
+  ( $( $key: expr => $value: expr ),* ) => {
+    {
+      let mut map = crate::Document::new();
+      $(
+        map.insert($key.to_string(), $crate::dataType::DataType::from($value));
+      )*
+      map
+    }
+  };
+}
 
 impl DataType {
   fn id(&self) -> u32 {
@@ -59,13 +71,14 @@ impl Collection {
     }
   }
 
-  pub fn add(&mut self, document: Document) {
+  pub fn add(&mut self, document: Document) -> u32 {
     let mut document = document;
     if !document.contains_key(ID) {
       self.last_id += 1;
       document.insert(ID.to_string(), DataType::Id(self.last_id));
     }
     self.data.push(document);
+    self.last_id
   }
 
   pub fn rm(&mut self, id: u32) {
@@ -107,18 +120,19 @@ impl Collection {
 //TEST
 #[cfg(test)]
 mod tests {
-  use super::*;
+  use crate::dataType::DataType;
+  use crate::collection::Collection;
+  use crate::doc;
 
   #[test]
   fn test_collection() {
     let mut collection = Collection::new("users".to_string());
-    let mut document = Document::new();
-    document.insert("id".to_string(), DataType::Id(1));
-    document.insert("name".to_string(), DataType::Text("John".to_string()));
-    document.insert("age".to_string(), DataType::Number(25));
-    document.insert("isMarried".to_string(), DataType::Boolean(false));
-    document.insert("birthDate".to_string(), DataType::Date("1995-01-01".to_string()));
-    collection.add(document);
+    collection.add(doc!(
+      "name" => "John", 
+      "age" => 25, 
+      "isMarried" => false, 
+      "birthDate" => "1995-01-01"
+    ));
     assert!(collection._get(0).is_some());
   }
 }
