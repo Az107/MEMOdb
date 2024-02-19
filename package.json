@@ -4,7 +4,7 @@
   "description": "small and fast db",
   "main": "index.js",
   "type": "commonjs",
-  "types": "build/index.d.ts",
+  "types": "index.d.ts",
   "scripts": {
     "test:js": "jest",
     "build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",

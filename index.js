@@ -1,7 +1,7 @@
 const _memodb = require('./index.node');
 
 //MEMOdb js wrapper
- class MEMOdb {
+class MEMOdb {
   static version = "v0.02";
   instance = null;
 
