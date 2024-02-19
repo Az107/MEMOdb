@@ -47,6 +47,14 @@ class Collection {
         return _memodb.collectionGetAll(this.instance, this.name);
     }
 
+    remove(index) {
+        _memodb.collectionRm(this.instance, this.name, index);
+    }
+
+    count() {
+        return _memodb.collectionCount(this.instance, this.name);
+    }
+
 }
 
 exports.MEMOdb = MEMOdb;
