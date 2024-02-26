@@ -28,28 +28,8 @@ macro_rules! doc {
   };
 }
 
-impl DataType {
-  fn id(&self) -> u32 {
-    match self {
-      DataType::Id(id) => *id,
-      _ => panic!("Not an ID"),
-    }
-  }
 
-  fn text(&self) -> &String {
-    match self {
-      DataType::Text(text) => text,
-      _ => panic!("Not a Text"),
-    }
-  }
 
-  fn number(&self) -> i32 {
-    match self {
-      DataType::Number(number) => *number,
-      _ => panic!("Not a Number"),
-    }
-  }
-}
 
 
 pub struct Collection {
