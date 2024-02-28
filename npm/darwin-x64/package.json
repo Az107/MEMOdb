@@ -1,0 +1,18 @@
+{
+  "name": "MEMOdb-darwin-x64",
+  "version": "0.0.0",
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "main": "MEMOdb.darwin-x64.node",
+  "files": [
+    "MEMOdb.darwin-x64.node"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">= 10"
+  }
+}

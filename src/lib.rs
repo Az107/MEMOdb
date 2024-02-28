@@ -1,5 +1,4 @@
-use std::{cell::RefCell, mem, ptr::null};
-use neon::{prelude::*, types::buffer::Ref};
+use std::{any::{Any, TypeId}, cell::{RefCell, RefMut}, collections::HashMap, env, hash::Hash, mem, ptr::null, rc::Rc};
 // import local module collection.rs
 mod dataType;
 mod collection;
@@ -7,211 +6,160 @@ mod memodb;
 use collection::{Collection, Document};
 use memodb::MEMOdb;
 use dataType::DataType;
+use napi::{bindgen_prelude::{Null, Object, ToNapiValue}, Env, JsObject};
+use napi_derive::napi;
+use napi::bindgen_prelude::FromNapiValue;
 
-type CapsuledMemodb = JsBox<RefCell<MEMOdb>>;
-
-
-pub struct FinalizableCollection(RefCell<Collection>);
-
-impl Finalize for FinalizableCollection {}
-
-fn document_to_js_object<'a>(cx: &mut FunctionContext<'a>, document: &Document) -> JsResult<'a, JsObject> {
-    let js_document: Handle<'_, JsObject> = cx.empty_object();
-    for (k, v) in document {
-        let key = cx.string(k.as_str());
-        match v {
-            DataType::Number(n) => {
-                let value = cx.number(*n);
-                js_document.set(cx, key, value)?;
-            },
-            DataType::Id(n) => {
-                let value = cx.number(*n);
-                js_document.set(cx, key, value)?;
-            },
-            DataType::Text(n) => {
-                let value = cx.string(n);
-                js_document.set(cx, key, value)?;
-            },
-            DataType::Boolean(n) => {
-                let value = cx.boolean(*n);
-                js_document.set(cx, key, value)?;
-            },
-            DataType::Date(n) => {
-                let value = cx.string(n);
-                js_document.set(cx, key, value)?;
-            },
-            DataType::Array(n) => {
-                let value = cx.empty_array();
-                js_document.set(cx, key, value)?;
-            },
-            DataType::Document(_) => todo!()
-        };
-    }
-    Ok(js_document)
-}
-
-fn js_object_to_document<'a>(cx: &mut FunctionContext<'a>, js_object: &JsObject) -> Result<Document, & 'static str> {
-    let mut document: Document = Document::new();
-    //iter over js_object properties
-    let keys = js_object.get_own_property_names(cx).unwrap().to_vec(cx).unwrap();
-    for key in keys {
-        let key_name = key.downcast::<JsString, _>(cx).unwrap().value(cx);
-        let value = js_object.get_value(cx, key).unwrap();
-        //check type of value
-        if value.is_a::<JsNumber, _>(cx) {
-            let value = value.downcast::<JsNumber, _>(cx).unwrap().value(cx);
-            document.insert(key_name, DataType::Number(value as i32));
-        } else if value.is_a::<JsString, _>(cx) {
-            let value = value.downcast::<JsString, _>(cx).unwrap().value(cx);
-            document.insert(key_name, DataType::Text(value));
-        } else if value.is_a::<JsBoolean, _>(cx) {
-            let value = value.downcast::<JsBoolean, _>(cx).unwrap().value(cx);
-            document.insert(key_name, DataType::Boolean(value));
-        } else if value.is_a::<JsArray, _>(cx) {
-            let value = value.downcast::<JsArray, _>(cx).unwrap().to_vec(cx).unwrap();
-            let mut value2: Vec<DataType> = Vec::new();
-            for element in value {
-                let element = element.downcast::<JsObject, _>(cx).unwrap();
-                let element = js_object_to_document(cx, &element);
-                if element.is_err() {
-                    continue;
-                }
-                value2.push(DataType::Document(element.unwrap()));
+#[macro_use]
+extern crate napi_derive;
+//create a memodbjs struct that herit from MEMOdb
+impl FromNapiValue for DataType {
+    unsafe fn from_napi_value(env: napi::sys::napi_env, napi_val: napi::sys::napi_value) -> napi::Result<Self> {
+       //get the type of the napi value
+        let mut type_id: i32 =  napi::sys::napi_valuetype::default();
+        napi::sys::napi_typeof(env, napi_val, &mut type_id);
+        print!("type_id: {:?}", type_id);
+        match type_id {
+            napi::sys::ValueType::napi_string => {
+                let mut result: String = String::from_napi_value(env, napi_val)?;
+                //error for test
+                Ok(Self::Text(result))
             }
-            document.insert(key_name, DataType::Array(value2));
-        } else {
-            return Err("Unknown type");
+            napi::sys::ValueType::napi_number => {
+                let mut result: i32 = f64::from_napi_value(env, napi_val)?.trunc() as i32;
+                Ok(Self::Number(result))
+            }
+            _ => {
+                Err(napi::Error::new(
+                    napi::Status::GenericFailure,
+                    "Error converting napi value to DataType",
+                ))
+            }
+
         }
+       
+    }
+}
 
+impl ToNapiValue for DataType {
+    unsafe fn to_napi_value(env: napi::sys::napi_env, val: Self) -> napi::Result<napi::sys::napi_value>{
+        match val {
+            DataType::Id(id) => {
+                let result: napi::sys::napi_value = id as napi::sys::napi_value;
+                Ok(result)
+            }
+            DataType::Text(text) => {
+                let result: napi::sys::napi_value = text.as_ptr() as napi::sys::napi_value;
+                Ok(result)
+            }
+            DataType::Number(number) => {
+                let result: napi::sys::napi_value = number as napi::sys::napi_value;
+                Ok(result)
+            }
+            DataType::Boolean(boolean) => {
+                let result: napi::sys::napi_value = &mut boolean.clone() as *mut bool as napi::sys::napi_value;
+                Ok(result)
+            }
+            DataType::Date(date) => {
+                let result: napi::sys::napi_value = date.as_ptr() as napi::sys::napi_value;
+                Ok(result)
+            }
+            DataType::Array(array) => {
+                let result: napi::sys::napi_value = array.as_ptr() as napi::sys::napi_value;
+                Ok(result)
+            }
+            DataType::Document(document) => {
+                let result: napi::sys::napi_value = "[object Placeholder]".as_ptr() as napi::sys::napi_value;
+                Ok(result)
+            }
+            _ => {
+                Err(napi::Error::new(
+                    napi::Status::GenericFailure,
+                    "Error converting DataType to napi value",
+                ))
+            }
+        }
+    }
+}
+
+#[napi(js_name = "MEMOdb")]
+pub struct MEMOdbJS {
+    db: Rc<RefCell<MEMOdb>>,
+}
+
+#[napi(js_name = "Collection")]
+pub struct CollectionJS {
+    pub name: String,
+    db: Rc<RefCell<MEMOdb>>,
+}
+
+#[napi]
+impl CollectionJS {
+    pub fn new(name: String, db: Rc<RefCell<MEMOdb>>) -> Self {
+        CollectionJS {
+            db,
+            name,
+        }
     }
 
-    Ok(document)
-}
-
-
-
-impl Finalize for MEMOdb {}
-
-//MEMOdb wrapper
-fn js_new_memodb(mut cx: FunctionContext) -> JsResult<CapsuledMemodb> {
-    let memodb = MEMOdb::new();
-    Ok(cx.boxed(RefCell::new(memodb)))
-}
-
-fn js_create_collection(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
-    let mut memodb = _memodb.borrow_mut();
-    let name = cx.argument::<JsString>(1)?.value(&mut cx);
-    memodb.create_collection(name); 
-    Ok(cx.undefined())
-}
-
-fn js_get_collection_list(mut cx: FunctionContext) -> JsResult<JsArray> {
-    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
-    let memodb = _memodb.borrow();
-    let collection_list = memodb.get_collection_list();
-    let js_collection_list: Handle<'_, JsArray> = cx.empty_array();
-    for (i, collection) in collection_list.iter().enumerate() {
-        let js_collection = cx.string(collection);
-        js_collection_list.set(&mut cx, i as u32, js_collection)?;
+    #[napi]
+    pub fn add(&self, document: Document) -> u32 {
+        let mut binding = self.db.borrow_mut();
+        let collection = binding.get_collection(self.name.clone()).unwrap();
+        collection.add(document)
     }
-    Ok(js_collection_list)
+
+    #[napi]
+    pub fn get(&self, id: u32) -> Option<Document> {
+        let mut binding = self.db.borrow_mut();
+        let collection = binding.get_collection(self.name.clone()).unwrap();
+        let document: Option<&Document> = collection.get(id);
+        match document {
+            Some(document) => Some(document.clone()),
+            None => None,
+            
+        }
+    }    
+
+    #[napi]
+    pub fn remove(&self, id: u32) {
+        let mut binding = self.db.borrow_mut();
+        let collection = binding.get_collection(self.name.clone()).unwrap();
+        collection.rm(id);
+    }
 }
 
-// Collection
-
-fn js_collection_add(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
-    let mut memodb = _memodb.borrow_mut();
-    let _collection  = cx.argument::<JsString>(1)?.value(&mut cx);
-    let collection = memodb.get_collection(_collection);
-    if collection.is_none() {
-        return Err(cx.throw_error("Collection not found").unwrap());
+#[napi]
+impl MEMOdbJS {
+    #[napi(constructor)]
+    pub fn new() -> Self {
+        MEMOdbJS {
+            db: RefCell::new(MEMOdb::new()).into(),
+        }
     }
-    let collection = collection.unwrap();
-    let document = cx.argument::<JsObject>(2)?;
-    let document = js_object_to_document(&mut cx, &document);
-    collection.add(document.unwrap());
-    Ok(cx.undefined())
+
+    #[napi]
+    pub fn create_collection(&self, name: String) {
+        self.db.borrow_mut().create_collection(name);
+    }
+
+    //list all collections
+    #[napi]
+    pub fn get_collection_list(&self) -> Vec<String> {
+        self.db.borrow().get_collection_list()
+    }
+
+    //get a collection
+    #[napi]
+    pub fn get_collection(&self, name: String) -> Option<CollectionJS> {
+        let mut binding = self.db.borrow_mut();
+        let collection = binding.get_collection(name.clone());
+        match collection {
+            Some(collection) => Some(CollectionJS::new(collection.name.clone(), Rc::clone(&self.db))),
+            None => None,
+        }
+    }
+
+
+   
 }
-
-fn js_collection_get(mut cx: FunctionContext) -> JsResult<JsObject> {
-    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
-    let mut memodb = _memodb.borrow_mut();
-    let _collection  = cx.argument::<JsString>(1)?.value(&mut cx);
-    let collection = memodb.get_collection(_collection);
-    if collection.is_none() {
-        return Err(cx.throw_error("Collection not found").unwrap());
-    }
-    let collection = collection.unwrap();
-    let index = cx.argument::<JsNumber>(2)?.value(&mut cx);
-    let document = collection.get(index as u32);
-    if document.is_none() {
-        return Err(cx.throw_error("Document not found").unwrap());
-    }
-    let document = document.unwrap();
-    let js_document = document_to_js_object(&mut cx, &document);
-    Ok(js_document.unwrap())
-}
-
-fn js_collection_get_all(mut cx: FunctionContext) -> JsResult<JsArray> {
-    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
-    let mut memodb = _memodb.borrow_mut();
-    let _collection  = cx.argument::<JsString>(1)?.value(&mut cx);
-    let collection = memodb.get_collection(_collection);
-    if collection.is_none() {
-        return Err(cx.throw_error("Collection not found").unwrap());
-    }
-    let collection = collection.unwrap();
-    let documents = collection.getAll();
-    let js_documents: Handle<'_, JsArray> = cx.empty_array();
-    for (i, document) in documents.iter().enumerate() {
-        let js_document = document_to_js_object(&mut cx, &document);
-        js_documents.set(&mut cx, i as u32, js_document.unwrap())?;
-    }
-    Ok(js_documents)
-}
-
-fn js_collection_rm(mut cx: FunctionContext) -> JsResult<JsUndefined> {
-    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
-    let mut memodb = _memodb.borrow_mut();
-    let _collection  = cx.argument::<JsString>(1)?.value(&mut cx);
-    let collection = memodb.get_collection(_collection);
-    if collection.is_none() {
-        return Err(cx.throw_error("Collection not found").unwrap());
-    }
-    let collection = collection.unwrap();
-    let index = cx.argument::<JsNumber>(2)?.value(&mut cx);
-    collection.remove(index as usize);
-    Ok(cx.undefined())
-}
-
-fn js_collection_count(mut cx: FunctionContext) -> JsResult<JsNumber> {
-    let _memodb  = cx.argument::<CapsuledMemodb>(0)?;
-    let mut memodb = _memodb.borrow_mut();
-    let _collection  = cx.argument::<JsString>(1)?.value(&mut cx);
-    let collection = memodb.get_collection(_collection);
-    if collection.is_none() {
-        return Err(cx.throw_error("Collection not found").unwrap());
-    }
-    let collection = collection.unwrap();
-    let count = collection.count();
-    Ok(cx.number(count as f64))
-}
-
-
-#[neon::main]
-fn main(mut cx: ModuleContext) -> NeonResult<()> {
-    cx.export_function("new", js_new_memodb)?;
-    cx.export_function("createCollection", js_create_collection)?;
-    cx.export_function("getCollectionList", js_get_collection_list)?;
-    cx.export_function("collectionAdd", js_collection_add)?;
-    cx.export_function("collectionGet", js_collection_get)?;
-    cx.export_function("collectionGetAll", js_collection_get_all)?;
-    cx.export_function("collectionRm", js_collection_rm)?;
-    cx.export_function("collectionCount", js_collection_count)?;
-
-    Ok(())
-}
-
-

@@ -1,4 +1,4 @@
-const _memodb = require('./index.node');
+const _memodb = require('./MEMOdb.node');
 
 //MEMOdb js wrapper
 class MEMOdb {

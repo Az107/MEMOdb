@@ -130,3 +130,18 @@ impl From<Document> for DataType {
     DataType::Document(value)
   }
 }
+
+//impl clone
+impl Clone for DataType {
+  fn clone(&self) -> Self {
+    match self {
+      DataType::Id(id) => DataType::Id(*id),
+      DataType::Text(text) => DataType::Text(text.clone()),
+      DataType::Number(number) => DataType::Number(*number),
+      DataType::Boolean(boolean) => DataType::Boolean(*boolean),
+      DataType::Date(date) => DataType::Date(date.clone()),
+      DataType::Array(array) => DataType::Array(array.clone()),
+      DataType::Document(document) => DataType::Document(document.clone()),
+    }
+  }
+}
