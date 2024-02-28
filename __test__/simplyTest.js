@@ -1,4 +1,4 @@
-const _m = require("./MEMOdb.node");
+const _m = require("../MEMOdb.node");
 let m = new _m.MEMOdb();
 let user = {name: "Alb", age: 24}
 let user2 = {name: "Enya", age: 20}

@@ -32,5 +32,15 @@
     "universal": "napi universal",
     "version": "napi version"
   },
-  "packageManager": "yarn@4.1.0"
+  "packageManager": "yarn@4.1.0",
+  "dependencies": {
+    "segfault-handler": "^1.3.0"
+  },
+  "optionalDependencies": {
+    "MEMOdb-win32-x64-msvc": "0.0.0",
+    "MEMOdb-darwin-x64": "0.0.0",
+    "MEMOdb-linux-x64-gnu": "0.0.0",
+    "MEMOdb-darwin-arm64": "0.0.0",
+    "MEMOdb-android-arm64": "0.0.0"
+  }
 }

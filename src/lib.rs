@@ -18,7 +18,6 @@ impl FromNapiValue for DataType {
        //get the type of the napi value
         let mut type_id: i32 =  napi::sys::napi_valuetype::default();
         napi::sys::napi_typeof(env, napi_val, &mut type_id);
-        print!("type_id: {:?}", type_id);
         match type_id {
             napi::sys::ValueType::napi_string => {
                 let mut result: String = String::from_napi_value(env, napi_val)?;
@@ -43,35 +42,38 @@ impl FromNapiValue for DataType {
 
 impl ToNapiValue for DataType {
     unsafe fn to_napi_value(env: napi::sys::napi_env, val: Self) -> napi::Result<napi::sys::napi_value>{
+        let mut result: napi::sys::napi_value = 0 as napi::sys::napi_value;
         match val {
             DataType::Id(id) => {
-                let result: napi::sys::napi_value = id as napi::sys::napi_value;
+                napi::sys::napi_create_int32(env, id.try_into().unwrap(), &mut result);
                 Ok(result)
             }
             DataType::Text(text) => {
-                let result: napi::sys::napi_value = text.as_ptr() as napi::sys::napi_value;
+                let text_ptr = text.as_ptr() as *const i8;
+                napi::sys::napi_create_string_utf8(env, text_ptr, text.len(), &mut result);
                 Ok(result)
             }
             DataType::Number(number) => {
-                let result: napi::sys::napi_value = number as napi::sys::napi_value;
+                napi::sys::napi_create_int32(env, number, &mut result);
                 Ok(result)
             }
             DataType::Boolean(boolean) => {
-                let result: napi::sys::napi_value = &mut boolean.clone() as *mut bool as napi::sys::napi_value;
+                napi::sys::napi_get_boolean(env, boolean, &mut result);
                 Ok(result)
             }
             DataType::Date(date) => {
-                let result: napi::sys::napi_value = date.as_ptr() as napi::sys::napi_value;
+                let text_ptr = date.as_ptr() as *const i8;
+                napi::sys::napi_create_string_utf8(env, text_ptr,date.len(), &mut result);
                 Ok(result)
             }
             DataType::Array(array) => {
-                let result: napi::sys::napi_value = array.as_ptr() as napi::sys::napi_value;
+                napi::sys::napi_create_array_with_length(env, array.len(), &mut result);
                 Ok(result)
             }
-            DataType::Document(document) => {
-                let result: napi::sys::napi_value = "[object Placeholder]".as_ptr() as napi::sys::napi_value;
-                Ok(result)
-            }
+            // DataType::Document(document) => {
+            //     let result: napi::sys::napi_value = "[object Placeholder]".as_ptr() as napi::sys::napi_value;
+            //     Ok(result)
+            // }
             _ => {
                 Err(napi::Error::new(
                     napi::Status::GenericFailure,
