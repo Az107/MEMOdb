@@ -32,7 +32,6 @@
     "universal": "napi universal",
     "version": "napi version"
   },
-  "packageManager": "yarn@4.1.0",
   "dependencies": {
     "segfault-handler": "^1.3.0"
   }

@@ -97,7 +97,7 @@ impl Collection {
 }
 
 
-//TEST
+
 #[cfg(test)]
 mod tests {
   use crate::dataType::DataType;
