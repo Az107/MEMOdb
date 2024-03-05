@@ -28,6 +28,32 @@ impl FromNapiValue for DataType {
                 let mut result: i32 = f64::from_napi_value(env, napi_val)?.trunc() as i32;
                 Ok(Self::Number(result))
             }
+            napi::sys::ValueType::napi_boolean => {
+                let mut result: bool = bool::from_napi_value(env, napi_val)?;
+                Ok(Self::Boolean(result))
+            }
+            napi::sys::ValueType::napi_object => {
+                let mut result: napi::sys::napi_value = napi_val;
+                let mut is_array: bool = false;
+                napi::sys::napi_is_array(env, result, &mut is_array);
+                if is_array {
+                    let mut length: u32 = 0;
+                    napi::sys::napi_get_array_length(env, result, &mut length);
+                    let mut array: Vec<DataType> = Vec::new();
+                    for i in 0..length {
+                        let mut element: napi::sys::napi_value = 0 as napi::sys::napi_value;
+                        napi::sys::napi_get_element(env, result, i, &mut element);
+                        let element: DataType = DataType::from_napi_value(env, element)?;
+                        array.push(element);
+                    }
+                    Ok(Self::Array(array))
+                } else {
+                    Err(napi::Error::new(
+                        napi::Status::GenericFailure,
+                        "Error converting napi value to DataType",
+                    ))
+                }
+            }
             _ => {
                 Err(napi::Error::new(
                     napi::Status::GenericFailure,
