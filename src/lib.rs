@@ -1,11 +1,12 @@
 use std::{any::{Any, TypeId}, cell::{RefCell, RefMut}, collections::HashMap, env, hash::Hash, mem, ptr::null, rc::Rc};
 // import local module collection.rs
-mod dataType;
-mod collection;
+
 mod memodb;
-use collection::{Collection, Document};
+
+use memodb::collection::{Collection, Document};
 use memodb::MEMOdb;
-use dataType::DataType;
+use memodb::dataType::DataType;
+
 use napi::{bindgen_prelude::{Null, Object, ToNapiValue}, Env, JsObject};
 use napi_derive::napi;
 use napi::bindgen_prelude::FromNapiValue;

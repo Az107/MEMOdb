@@ -1,8 +1,6 @@
-
-
+pub mod collection;
+pub mod dataType;
 use collection::Collection;
-
-use crate::collection;
 
 pub struct MEMOdb {
     pub version: &'static str,
@@ -55,7 +53,9 @@ impl MEMOdb {
 #[cfg(test)]
 mod tests {
     use std::time::Instant;
-    use crate::{collection::{Document, Document_struct}, doc};
+    use crate::Document;
+    use crate::doc;
+    use crate::memodb::collection::Document_struct;
 
     struct User {
         name: String,

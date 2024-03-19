@@ -1,4 +1,4 @@
-use crate::collection::Document;
+use super::collection::Document;
 
 #[derive(PartialEq)]
 pub enum DataType {

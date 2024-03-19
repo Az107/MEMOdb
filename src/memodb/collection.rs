@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::dataType::DataType;
+use super::dataType::DataType;
 
 const ID: &str = "ID";
 
@@ -19,9 +19,10 @@ pub trait Document_struct {
 macro_rules! doc {
   ( $( $key: expr => $value: expr ),* ) => {
     {
+      use crate::memodb::dataType::DataType; // Add this line
       let mut map = crate::Document::new();
       $(
-        map.insert($key.to_string(), $crate::dataType::DataType::from($value));
+        map.insert($key.to_string(), DataType::from($value)); // Update this line
       )*
       map
     }
@@ -97,11 +98,10 @@ impl Collection {
 }
 
 
-
+//TEST
 #[cfg(test)]
 mod tests {
-  use crate::dataType::DataType;
-  use crate::collection::Collection;
+  use crate::memodb::collection::Collection;
   use crate::doc;
 
   #[test]
