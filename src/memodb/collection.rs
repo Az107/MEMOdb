@@ -86,11 +86,12 @@ impl DocumentJson for Document {
 macro_rules! doc {
   ( $( $key: expr => $value: expr ),* ) => {
     {
-      let mut map = Document::new();
-      $(
-        map.insert($key.to_string(), DataType::from($value)); // Update this line
-      )*
-      map
+        use crate::Collection::Document;
+        let mut map = Document::new();
+        $(
+            map.insert($key.to_string(), DataType::from($value)); // Update this line
+        )*
+        map
     }
   };
 }
@@ -133,7 +134,7 @@ impl DocumentJson for Collection {
             return Err("()");
         }
         let name = name.unwrap().to_string().replace("\"", "");
-        let mut collection = Collection::new(name);
+        let mut collection = Collection::new(name.as_str());
         let data = obj.get("data");
         if data.is_none() {
             return Err("()");
@@ -158,9 +159,9 @@ impl DocumentJson for Collection {
 }
 
 impl Collection {
-    pub fn new(name: String) -> Self {
+    pub fn new(name: &str) -> Self {
         Collection {
-            name: name,
+            name: name.to_string(),
             data: Vec::new(),
             id_table: HashMap::new(),
             //b_tree: BNode::new(),
@@ -283,19 +284,14 @@ impl Collection {
 
 //TEST
 #[cfg(test)]
-mod tests {
-    use crate::doc;
-    use crate::memodb::collection::Collection;
-
-    #[test]
-    fn test_collection() {
-        let mut collection = Collection::new("users".to_string());
-        collection.add(doc!(
-          "name" => "John",
-          "age" => 25,
-          "isMarried" => false,
-          "birthDate" => "1995-01-01"
-        ));
-        assert!(collection._get(0).is_some());
-    }
+#[test]
+fn test_collection() {
+    let mut collection = Collection::new("users");
+    collection.add(doc!(
+      "name" => "John",
+      "age" => 25,
+      "isMarried" => false,
+      "birthDate" => "1995-01-01"
+    ));
+    assert!(collection._get(0).is_some());
 }

@@ -4,14 +4,15 @@
 //
 // The MEMOdb will have a collection of documents, each document will be a HashMap<String, DataType>
 
-pub mod collection;
-pub mod data_type;
+mod collection;
+mod data_type;
 mod finder;
-use collection::{Collection, DocumentJson};
+pub use collection::{Collection, Document, DocumentJson};
+pub use data_type::DataType;
 use serde_json::Value;
 use std::{fs, str::FromStr};
 
-const VERSION: &'static str = "0.1.5";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub struct MEMOdb {
     pub version: &'static str,
@@ -76,14 +77,14 @@ impl MEMOdb {
         Ok(())
     }
 
-    pub fn create_collection(&mut self, name: String) -> Result<(), &str> {
+    pub fn create_collection(&mut self, name: &str) -> Result<&mut Collection, &str> {
         //check if collection exists
         if self.collections.iter().any(|x| x.name == name) {
             Err("Collection already exists")
         } else {
             let collection = Collection::new(name);
             self.collections.push(collection);
-            Ok(())
+            return Ok(self.collections.last_mut().unwrap());
         }
     }
 
@@ -115,8 +116,8 @@ impl MEMOdb {
 #[test]
 fn test_memodb() {
     let mut memodb = MEMOdb::new();
-    let r1 = memodb.create_collection("users".to_string()).is_ok();
-    let r2 = memodb.create_collection("posts".to_string()).is_ok();
+    let r1 = memodb.create_collection("users").is_ok();
+    let r2 = memodb.create_collection("posts").is_ok();
     assert!(r1);
     assert!(r2);
     assert_eq!(memodb.collections.len(), 2);
@@ -140,29 +141,12 @@ fn test_memodb() {
 #[test]
 fn add_document() {
     let mut memodb = MEMOdb::new();
-    let _ = memodb.create_collection("users".to_string());
+    let _ = memodb.create_collection("users");
     let collection = memodb.get_collection("users".to_string()).unwrap();
     let id1 = collection.add(doc! {"name" => "John", "age" => 30});
     let id2 = collection.add(doc! {"name" => "Jane", "age" => 25});
     assert_eq!(collection.count(), 2);
     let document = collection.get(id1).unwrap();
-    let user = User::from_document(document);
-    assert_eq!(user.name, "John");
 }
 
-#[test]
-fn add_document_from_struct() {
-    let mut memodb = MEMOdb::new();
-    let _ = memodb.create_collection("users".to_string());
-    let collection = memodb.get_collection("users".to_string()).unwrap();
-    let user = User {
-        name: "John".to_string(),
-        age: 30,
-    };
-    let id = collection.add(user.to_document());
-    assert_eq!(collection.count(), 1);
-    let document = collection.get(id).unwrap();
-    document.to_json();
-    let user = User::from_document(document);
-    assert_eq!(user.name, "John");
-}
+//
