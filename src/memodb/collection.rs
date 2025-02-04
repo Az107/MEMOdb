@@ -86,199 +86,104 @@ impl DocumentJson for Document {
 macro_rules! doc {
   ( $( $key: expr => $value: expr ),* ) => {
     {
-        use crate::Collection::Document;
+        use crate::Document;
         let mut map = Document::new();
         $(
             map.insert($key.to_string(), DataType::from($value)); // Update this line
         )*
-        map
+        DataType::Document(map)
     }
   };
 }
 
 pub struct Collection {
     pub name: String,
-    pub(crate) data: Vec<Document>,
-    id_table: HashMap<Uuid, usize>,
+    pub(crate) data: HashMap<String, DataType>,
     //b_tree: BNode
 }
 
-impl DocumentJson for Collection {
-    fn to_json_value(&self) -> Value {
-        let mut json = serde_json::json!({
-          "name": self.name,
-          "data": []
-        });
-        let mut jsondata = Vec::new();
-        for document in self.data.iter() {
-            jsondata.push(document.to_json_value())
-        }
-        json["data"] = serde_json::Value::Array(jsondata);
-        println!(
-            "col is {} , {}",
-            json.is_object(),
-            json.to_string().as_str()
-        );
-        json
-    }
+// impl DocumentJson for Collection {
+//     fn to_json_value(&self) -> Value {
+//         let mut json = serde_json::json!({
+//           "name": self.name,
+//           "data": []
+//         });
+//         let mut jsondata = Vec::new();
+//         for document in self.data.iter() {
+//             jsondata.push(document.to_json_value())
+//         }
+//         json["data"] = serde_json::Value::Array(jsondata);
+//         json
+//     }
 
-    fn to_json(&self) -> String {
-        self.to_json_value().to_string()
-    }
+//     fn to_json(&self) -> String {
+//         self.to_json_value().to_string()
+//     }
 
-    fn from_json(json: &str) -> Result<Self, &str> {
-        let v: Value = serde_json::from_str(json).unwrap();
-        let obj = v.as_object().unwrap();
-        let name = obj.get("name");
-        if name.is_none() {
-            return Err("()");
-        }
-        let name = name.unwrap().to_string().replace("\"", "");
-        let mut collection = Collection::new(name.as_str());
-        let data = obj.get("data");
-        if data.is_none() {
-            return Err("()");
-        }
-        let data = data.unwrap().as_array();
-        if data.is_none() {
-            return Err("Error converting data as array");
-        }
-        let data = data.unwrap();
-        for document in data {
-            let document = document.to_string();
-            let document = document.as_str();
-            let doc = Document::from_json(document);
-            if doc.is_err() {
-                continue;
-            }
-            let doc = doc.unwrap();
-            collection.add(doc);
-        }
-        return Ok(collection);
-    }
-}
+//     fn from_json(json: &str) -> Result<Self, &str> {
+//         let v: Value = serde_json::from_str(json).unwrap();
+//         let obj = v.as_object().unwrap();
+//         let name = obj.get("name");
+//         if name.is_none() {
+//             return Err("()");
+//         }
+//         let name = name.unwrap().to_string().replace("\"", "");
+//         let mut collection = Collection::new(name.as_str());
+//         let data = obj.get("data");
+//         if data.is_none() {
+//             return Err("()");
+//         }
+//         let data = data.unwrap().as_array();
+//         if data.is_none() {
+//             return Err("Error converting data as array");
+//         }
+//         let data = data.unwrap();
+//         for document in data {
+//             let document = document.to_string();
+//             let document = document.as_str();
+//             let doc = Document::from_json(document);
+//             if doc.is_err() {
+//                 continue;
+//             }
+//             let doc = doc.unwrap();
+//             collection.add(doc);
+//         }
+//         return Ok(collection);
+//     }
+// }
 
 impl Collection {
     pub fn new(name: &str) -> Self {
         Collection {
             name: name.to_string(),
-            data: Vec::new(),
-            id_table: HashMap::new(),
-            //b_tree: BNode::new(),
+            data: HashMap::new(), //b_tree: BNode::new(),
         }
     }
 
-    fn update_index(&mut self) {
-        self.id_table.clear();
-        for (index, document) in self.data.iter().enumerate() {
-            let id = document.get(ID).unwrap().to_id();
-            self.id_table.insert(id, index);
-        }
+    pub fn add(&mut self, key: &str, value: DataType) -> &mut Self {
+        self.data.insert(key.to_string(), value);
+        return self;
     }
 
-    pub fn add(&mut self, document: Document) -> Uuid {
-        let mut document = document;
-        if !document.contains_key(ID) {
-            let id = Uuid::new_v4();
-            document.insert(ID.to_string(), DataType::Id(id));
-        } else {
-            let id = document.get(ID).unwrap().to_id();
-            // if id exists replace id with new id
-            if self.id_table.contains_key(&id) {
-                document.remove(ID);
-                let id = Uuid::new_v4();
-                document.insert(ID.to_string(), DataType::Id(id));
-            }
-        }
-        let id = document.get(ID).unwrap().to_id();
-        self.data.push(document);
-        self.id_table.insert(id, self.data.len() - 1);
-        id
-    }
-
-    pub fn rm(&mut self, id: Uuid) {
+    pub fn rm(&mut self, key: &str) {
         //self.data.remove(index);
-        let index = self.get_index(id);
-        self.data.swap_remove(index);
-        self.update_index();
+        self.data.remove(key);
     }
 
     pub fn count(&self) -> usize {
         self.data.len()
     }
 
-    fn _get(&self, index: usize) -> Option<&Document> {
-        self.data.get(index)
+    pub fn list(&self) -> HashMap<String, DataType> {
+        return self.data.clone();
     }
 
-    fn get_index(&self, id: Uuid) -> usize {
-        let id = DataType::Id(id);
-        self.data
-            .iter()
-            .position(|x| x.get(ID).unwrap() == &id)
-            .unwrap()
+    pub fn get(&mut self, key: &str) -> Option<&DataType> {
+        return self.data.get(key);
     }
 
-    pub fn get_all(&self, limit: usize, offset: usize) -> Vec<Document> {
-        if limit == 0 {
-            return self.data.clone();
-        }
-        // let limit = limit+offset;
-        // if limit > self.data.len() {
-        //   return self.data[offset..].to_vec()
-        // }
-        self.data[offset..limit].to_vec()
-    }
-
-    fn _find_by_key(&self, key: &str) -> Vec<&Document> {
-        self.data.iter().filter(|&x| x.contains_key(key)).collect()
-    }
-
-    fn _find_by_value(&self, key: &str, value: &DataType) -> Vec<&Document> {
-        self.data
-            .iter()
-            .filter(|&x| x.contains_key(key) && x.get(key).unwrap() == value)
-            .collect()
-    }
-
-    pub fn find(&self, args: HashMap<String, DataType>) -> Vec<&Document> {
-        let mut result = Vec::new();
-        for (key, value) in args.iter() {
-            let is_id = value.to_string().parse::<Uuid>();
-            if key == ID && is_id.is_ok() {
-                let id = value.to_id();
-                let index = self.id_table.get(&id);
-                match index {
-                    Some(index) => result.push(self._get(*index).unwrap()),
-                    None => continue,
-                }
-            } else {
-                result.append(&mut self._find_by_value(key, value));
-            }
-        }
-        result
-    }
-
-    fn slow_get(&mut self, id: Uuid) -> Option<&mut Document> {
-        let id = DataType::Id(id);
-        self.data.iter_mut().find(|x| x.get(ID).unwrap() == &id)
-    }
-
-    pub fn get(&mut self, id: Uuid) -> Option<&mut Document> {
-        let index = self.id_table.get(&id);
-        match index {
-            Some(index) => self.data.get_mut(*index),
-            None => self.slow_get(id),
-        }
-    }
-
-    pub fn update_document(&mut self, id: Uuid, new_document: Document) -> Option<&Document> {
-        let document = self.get(id).unwrap();
-        for (key, val) in new_document.iter() {
-            document.remove(key);
-            document.insert(key.to_string(), val.clone());
-        }
-        return Some(document);
+    pub fn update(&mut self, key: &str, value: DataType) {
+        self.add(key, value);
     }
 }
 
@@ -287,11 +192,14 @@ impl Collection {
 #[test]
 fn test_collection() {
     let mut collection = Collection::new("users");
-    collection.add(doc!(
-      "name" => "John",
-      "age" => 25,
-      "isMarried" => false,
-      "birthDate" => "1995-01-01"
-    ));
-    assert!(collection._get(0).is_some());
+    collection.add(
+        "John",
+        doc!(
+          "name" => "John",
+          "age" => 25,
+          "isMarried" => false,
+          "birthDate" => "1995-01-01"
+        ),
+    );
+    assert!(collection.get("John").is_some());
 }

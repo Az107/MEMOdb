@@ -6,7 +6,6 @@
 
 mod collection;
 mod data_type;
-mod finder;
 pub use collection::{Collection, Document, DocumentJson};
 pub use data_type::DataType;
 use serde_json::Value;
@@ -49,11 +48,11 @@ impl MEMOdb {
         for coll in json {
             let coll = coll.to_string();
             let coll = coll.as_str();
-            let collection = Collection::from_json(coll);
-            if collection.is_err() {
-                continue;
-            }
-            collections.push(collection.unwrap());
+            // let collection = Collection::from_json(coll);
+            // if collection.is_err() {
+            //     continue;
+            // }
+            // collections.push(collection.unwrap());
         }
 
         Ok(MEMOdb {
@@ -65,9 +64,9 @@ impl MEMOdb {
 
     pub fn dump(&self) -> Result<(), &str> {
         let mut list = Vec::new();
-        println!("Dumping {} collections", self.collections.len());
+
         for collection in self.collections.iter() {
-            list.push(collection.to_json_value());
+            //list.push(collection.to_json_value());
         }
 
         let json = Value::Array(list);
@@ -88,9 +87,11 @@ impl MEMOdb {
         }
     }
 
-    pub fn get_collection(&mut self, name: String) -> Option<&mut Collection> {
+    pub fn get_collection(&mut self, name: &str) -> Option<&mut Collection> {
         //return a mutable reference to collection
-        self.collections.iter_mut().find(|x| x.name == name)
+        self.collections
+            .iter_mut()
+            .find(|x| x.name == name.to_string())
     }
 
     pub fn get_collection_list(&self) -> Vec<String> {
@@ -123,14 +124,8 @@ fn test_memodb() {
     assert_eq!(memodb.collections.len(), 2);
     assert_eq!(memodb.collections[0].name, "users");
     assert_eq!(memodb.collections[1].name, "posts");
-    assert_eq!(
-        memodb.get_collection("users".to_string()).unwrap().name,
-        "users"
-    );
-    assert_eq!(
-        memodb.get_collection("posts".to_string()).unwrap().name,
-        "posts"
-    );
+    assert_eq!(memodb.get_collection("users").unwrap().name, "users");
+    assert_eq!(memodb.get_collection("posts").unwrap().name, "posts");
     assert_eq!(memodb.get_collection_list().len(), 2);
     assert_eq!(memodb.remove_collection("users".to_string()).name, "users");
     assert_eq!(memodb.collections.len(), 1);
@@ -142,11 +137,11 @@ fn test_memodb() {
 fn add_document() {
     let mut memodb = MEMOdb::new();
     let _ = memodb.create_collection("users");
-    let collection = memodb.get_collection("users".to_string()).unwrap();
-    let id1 = collection.add(doc! {"name" => "John", "age" => 30});
-    let id2 = collection.add(doc! {"name" => "Jane", "age" => 25});
+    let collection = memodb.get_collection("users").unwrap();
+    let id1 = collection.add("John", doc! {"name" => "John", "age" => 30});
+    let id2 = collection.add("Jane", doc! {"name" => "Jane", "age" => 25});
     assert_eq!(collection.count(), 2);
-    let document = collection.get(id1).unwrap();
+    let document = collection.get("John").unwrap();
 }
 
 //
