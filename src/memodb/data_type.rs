@@ -28,66 +28,6 @@ impl DataType {
         }
     }
 
-    #[deprecated]
-    pub fn to_json(&self) -> String {
-        match self {
-            DataType::Id(id) => format!("\"{}\"", id.to_string()),
-            DataType::Text(text) => format!("\"{}\"", text),
-            DataType::Number(number) => number.to_string(),
-            DataType::Boolean(boolean) => boolean.to_string(),
-            DataType::Array(array) => {
-                let mut json = String::from("[");
-                for value in array {
-                    json.push_str(&value.to_json());
-                    json.push_str(",");
-                }
-                json.pop();
-                json.push(']');
-                json
-            }
-            DataType::Document(document) => {
-                let mut json = String::from("{");
-                for (key, value) in document {
-                    json.push_str(&format!("\"{}\":{},", key, value.to_json()));
-                }
-                json.pop();
-                json.push('}');
-                json
-            }
-        }
-    }
-
-    #[deprecated]
-    pub fn from_json(json: &str) -> DataType {
-        let json = json.trim();
-        if json.starts_with('[') {
-            let mut array = Vec::new();
-            let json = &json[1..json.len() - 1];
-            let json = json.split(',');
-            for value in json {
-                array.push(DataType::from_json(value));
-            }
-            DataType::Array(array)
-        } else if json.starts_with('{') {
-            let document = Document::from_json(json);
-            if document.is_err() {
-                return DataType::Document(Document::new());
-            } else {
-                return DataType::Document(document.unwrap());
-            }
-        } else if json.starts_with('\"') {
-            DataType::Text(json[1..json.len() - 1].to_string())
-        } else if json == "true" {
-            DataType::Boolean(true)
-        } else if json == "false" {
-            DataType::Boolean(false)
-        } else {
-            match json.parse::<i32>() {
-                Ok(number) => DataType::Number(number),
-                Err(_) => DataType::Text(json.to_string()),
-            }
-        }
-    }
     //add into
     pub fn to_id(&self) -> Uuid {
         match self {
@@ -124,6 +64,20 @@ impl DataType {
             DataType::Document(document) => document,
             _ => panic!("Not a Document"),
         }
+    }
+
+    pub fn auto_load(raw: String) -> Option<Self> {
+        let t = if Uuid::parse_str(raw.as_str()).is_ok() {
+            1
+        } else if raw.parse::<i32>().is_ok() {
+            3
+        } else if raw.to_lowercase().as_str() == "true" || raw.to_lowercase().as_str() == "true" {
+            4
+        } else {
+            2
+        };
+
+        Self::load(t, raw)
     }
 
     pub fn load(t: u16, raw: String) -> Option<Self> {

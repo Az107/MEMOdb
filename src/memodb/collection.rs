@@ -6,7 +6,7 @@ use crate::utils;
 // The Document will be a HashMap<String, DataType>
 use super::data_type::DataType;
 use serde_json::Value;
-use std::{collections::HashMap, fmt::format};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 const ID: &str = "ID";
@@ -14,11 +14,6 @@ const ID: &str = "ID";
 //create a trait based on HashMap<String,DataType>
 // and impl especial methods for it
 pub type Document = HashMap<String, DataType>;
-
-pub trait DocumentStruct {
-    fn to_document(&self) -> Document;
-    fn from_document(document: &Document) -> Self;
-}
 
 pub trait DocumentJson: Sized {
     fn to_json(&self) -> String;
@@ -88,7 +83,7 @@ impl DocumentJson for Document {
 macro_rules! doc {
   ( $( $key: expr => $value: expr ),* ) => {
     {
-        use crate::Document;
+        use super::collection::Document;
         let mut map = Document::new();
         $(
             map.insert($key.to_string(), DataType::from($value)); // Update this line

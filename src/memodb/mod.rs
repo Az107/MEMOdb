@@ -4,13 +4,12 @@
 //
 // The MEMOdb will have a collection of documents, each document will be a HashMap<String, DataType>
 
-mod collection;
+pub mod collection;
 mod data_type;
 pub mod utils;
-pub use collection::{Collection, Document};
+pub use collection::Collection;
 pub use data_type::DataType;
-use serde_json::Value;
-use std::{cell::RefCell, fs, rc::Rc, str::FromStr};
+use std::fs;
 
 pub struct MEMOdb {
     pub version: &'static str,
@@ -73,7 +72,7 @@ impl MEMOdb {
             result.push_str("\n");
         }
 
-        fs::write(self.path.as_str(), result);
+        let _ = fs::write(self.path.as_str(), result);
         Ok(())
     }
 
