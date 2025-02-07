@@ -125,6 +125,32 @@ impl DataType {
             _ => panic!("Not a Document"),
         }
     }
+
+    pub fn load(t: u16, raw: String) -> Option<Self> {
+        match t {
+            1 => {
+                let id = Uuid::parse_str(raw.as_str());
+                if id.is_err() {
+                    return None;
+                }
+                Some(DataType::Id(id.unwrap()))
+            }
+            2 => Some(DataType::Text(raw)),
+            3 => {
+                let n = raw.parse::<i32>();
+                if n.is_err() {
+                    return None;
+                }
+                Some(DataType::Number(n.unwrap()))
+            }
+            4 => match raw.to_lowercase().as_str() {
+                "true" => Some(DataType::Boolean(true)),
+                "false" => Some(DataType::Boolean(false)),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
 }
 
 impl ToString for DataType {

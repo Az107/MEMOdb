@@ -1,17 +1,19 @@
 mod memodb;
+
+use memodb::utils;
 use std::io::Write;
-use std::path::{self, Path};
+use std::path::Path;
 use std::{env, io};
 
 use memodb::{Collection, DataType, Document, MEMOdb};
 
-const DEFAULT_PATH: &str = "./MEMOdb/default.json";
+const DEFAULT_PATH: &str = "default.mdb";
 const DEFAULT_COLLECTION_NAME: &str = "default";
 
-fn process(default_collection: &mut Collection, action: &str, args: Vec<String>) {
+fn process(collection: &mut Collection, action: &str, args: Vec<String>) {
     match action {
         "list" => {
-            for (k, v) in default_collection.list() {
+            for (k, v) in collection.list() {
                 println!("{} => {}", k, v.to_string())
             }
         }
@@ -21,11 +23,33 @@ fn process(default_collection: &mut Collection, action: &str, args: Vec<String>)
             }
             let key = args.get(0).unwrap().as_str();
             let value = args.get(1).unwrap().as_str();
-            default_collection.add(key, DataType::Text(value.to_string()));
-            println!("{} elements added", default_collection.count());
+            collection.add(key, DataType::Text(value.to_string()));
+            println!("{} elements added", collection.count());
+        }
+        "get" => {
+            if args.len() < 1 {
+                println!("memodb get [key]")
+            }
+            let key = args.get(0).unwrap().as_str();
+            let value = collection.get(key);
+            match value {
+                Some(v) => println!("{}", v.to_string()),
+                None => println!("{}: Not Found", key),
+            };
+        }
+        "del" => {
+            if args.len() < 1 {
+                println!("memodb get [key]")
+            }
+            let key = args.get(0).unwrap().as_str();
+            collection.rm(key);
+            println!("{}: Removed", key);
         }
         "echo" => {
             println!("{:?}", args);
+        }
+        "name" => {
+            println!("Collection {}", collection.name);
         }
         _ => println!("Unknown command {}", action),
     }
@@ -38,36 +62,39 @@ fn main() {
     } else {
         db = MEMOdb::load(DEFAULT_PATH).unwrap();
     }
-    let default_collection = db.get_collection(DEFAULT_COLLECTION_NAME);
-    let default_collection = if default_collection.is_none() {
-        db.create_collection(DEFAULT_COLLECTION_NAME).unwrap()
-    } else {
-        default_collection.unwrap()
-    };
-    println!("MEMOdb {}", "MOCK");
+    println!("MEMOdb {}", db.version);
+    if db.get_collection(DEFAULT_COLLECTION_NAME).is_none() {
+        db.create_collection(DEFAULT_COLLECTION_NAME);
+    }
+    let mut selected = "";
     let args: Vec<String> = env::args().collect();
     if args.len() <= 1 {
         loop {
-            print!("> ");
+            print!("{}> ", selected);
             let _ = io::stdout().flush();
             let mut buffer = String::new();
-            io::stdin().read_line(&mut buffer);
-            let command: Vec<String> = buffer.split_whitespace().map(|v| v.to_string()).collect();
+            let _ = io::stdin().read_line(&mut buffer);
+            let command: Vec<String> = utils::smart_split(buffer);
             let action = command.get(0).unwrap().as_str();
             let args = if command.len() > 0 {
                 command.clone()[1..].to_vec()
             } else {
                 Vec::new()
             };
+
             if action == "exit" {
                 break;
             }
-            process(default_collection, action, args);
+            process(db.get_collection(selected).unwrap(), action, args);
         }
     } else {
         let action = args.get(1).unwrap().as_str();
         let args = args.clone()[2..].to_vec();
-        process(default_collection, action, args);
+        process(
+            db.get_collection(DEFAULT_COLLECTION_NAME).unwrap(),
+            action,
+            args,
+        );
     }
 
     let _ = db.dump();

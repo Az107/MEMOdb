@@ -1,10 +1,12 @@
+use crate::utils;
+
 // Writen by Alberto Ruiz 2024-03-08
 // The collection module will provide the collection of documents for the MEMOdb
 // The collection will store the documents in memory and provide a simple API to interact with them
 // The Document will be a HashMap<String, DataType>
 use super::data_type::DataType;
 use serde_json::Value;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::format};
 use uuid::Uuid;
 
 const ID: &str = "ID";
@@ -182,8 +184,67 @@ impl Collection {
         return self.data.get(key);
     }
 
-    pub fn update(&mut self, key: &str, value: DataType) {
-        self.add(key, value);
+    pub fn dump(&self) -> String {
+        let mut result = String::new();
+        result.push_str(format!("[{}]\n", self.name).as_str());
+        for (k, v) in self.data.iter() {
+            let t = match v.get_type() {
+                "id" => "1",
+                "text" => "2",
+                "number" => "3",
+                "boolean" => "4",
+                "array" => "5",
+                "document" => "6",
+                _ => "7",
+            };
+            let line = format!("{} {} {}\n", t, k, v.to_string());
+            result.push_str(line.as_str());
+        }
+        return result;
+    }
+
+    pub fn load(data: &str) -> Collection {
+        let data_text = data.to_string();
+        let parser = data_text.lines();
+        let name = parser.clone().next();
+        if name.is_none() {
+            panic!("invalid data")
+        }
+        let name = name
+            .unwrap()
+            .strip_suffix(']')
+            .unwrap()
+            .strip_prefix('[')
+            .unwrap();
+        let mut result = Collection::new(name);
+        for line in parser.into_iter() {
+            if line.starts_with('[') {
+                continue;
+            }
+            let line_text = line.to_string();
+            let elements = utils::smart_split(line_text);
+            if elements.len() != 3 {
+                continue;
+            }
+            let raw_t = elements[0].clone();
+            let t = raw_t.parse::<u16>();
+            if t.is_err() {
+                println!("Error parsing: {:?}", t.err());
+                continue;
+            }
+            let t = t.unwrap();
+            let k = elements[1].clone();
+            let raw_v = elements[2].clone();
+            let v = DataType::load(t, raw_v);
+            if v.is_none() {
+                println!("Error parsing: unresolved value");
+                continue;
+            }
+            let v = v.unwrap();
+            result.add(k.as_str(), v);
+        }
+
+        return result;
     }
 }
 
@@ -202,4 +263,29 @@ fn test_collection() {
         ),
     );
     assert!(collection.get("John").is_some());
+}
+
+#[test]
+fn test_dump() {
+    let header = "[prueba]\n";
+    let kv_name = "2 name Juan";
+    let kv_surname = "2 surname Perez";
+    let kv_age = "3 age 15";
+
+    let mut collection = Collection::new("prueba");
+    collection.add("name", DataType::Text("Juan".to_string()));
+    collection.add("surname", DataType::Text("Perez".to_string()));
+    collection.add("age", DataType::Number(15));
+    let dump = collection.dump();
+    assert!(dump.starts_with(header));
+    assert!(dump.contains(kv_name));
+    assert!(dump.contains(kv_surname));
+    assert!(dump.contains(kv_age));
+}
+
+#[test]
+fn test_load() {
+    let dump = "[prueba]\n2 name Juan\n2 surname Perez\n3 age 15\n";
+    let c = Collection::load(dump);
+    assert_eq!(c.name, "prueba");
 }
