@@ -5,8 +5,9 @@ pub fn smart_split(text: String) -> Vec<String> {
     for word in words {
         let count = word.matches('"').count();
         let count2 = word.matches("'").count();
+        let count3 = word.matches("[").count() + word.matches("]").count();
         if word_finnished {
-            if count % 2 != 0 || count2 % 2 != 0 {
+            if count % 2 != 0 || count2 % 2 != 0 || count3 != 0 {
                 word_finnished = false;
             }
             result.push(word.to_string());
@@ -14,7 +15,7 @@ pub fn smart_split(text: String) -> Vec<String> {
             if let Some(last) = result.last_mut() {
                 last.push_str(" ");
                 last.push_str(word);
-                if count % 2 != 0 || count2 % 2 != 0 {
+                if count % 2 != 0 || count2 % 2 != 0 || count3 != 0 {
                     word_finnished = true;
                 }
             }

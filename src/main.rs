@@ -1,6 +1,7 @@
 mod memodb;
 
 use memodb::utils;
+use std::fmt::format;
 use std::io::Write;
 use std::path::Path;
 use std::{env, io};
@@ -37,9 +38,21 @@ fn process(collection: &mut Collection, action: &str, args: Vec<String>) {
             }
             let key = args.get(0).unwrap().as_str();
             let value = collection.get(key);
-            match value {
-                Some(v) => println!("{}", v.to_string()),
-                None => println!("{}: Not Found", key),
+            if value.is_none() {
+                println!("{}: Not Found", key);
+                return;
+            }
+            let value = value.unwrap().clone();
+            if args.len() == 2 {
+                let i = args.get(1).unwrap().parse::<usize>();
+                if i.is_err() {
+                    value;
+                } else {
+                    let i = i.unwrap();
+                    println!("{}[{}] => {}", key, i, value.get(i).to_string());
+                }
+            } else {
+                println!("{} => {}", key, value.to_string());
             };
         }
         "del" => {

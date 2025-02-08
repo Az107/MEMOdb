@@ -230,7 +230,11 @@ impl Collection {
             let t = t.unwrap();
             let k = elements[1].clone();
             let raw_v = elements[2].clone();
-            let v = DataType::load(t, raw_v);
+            let v = if t >= 5 {
+                DataType::auto_load(raw_v)
+            } else {
+                DataType::load(t, raw_v)
+            };
             if v.is_none() {
                 println!("Error parsing: unresolved value");
                 continue;

@@ -3,7 +3,7 @@
 // this will be store several types of data, like text, numbers, dates, arrays and documents
 //
 // The data type will be used to store the data in the documents
-use super::collection::{Document, DocumentJson};
+use super::collection::Document;
 use uuid::Uuid;
 
 #[derive(PartialEq, Debug)]
@@ -26,6 +26,40 @@ impl DataType {
             DataType::Array(_) => "array",
             DataType::Document(_) => "document",
         }
+    }
+
+    pub fn get(&self, n: usize) -> DataType {
+        //WIP 🚧
+        if matches!(self, DataType::Array(_)) {
+            return self.to_array().get(n).unwrap().clone();
+        } else {
+            return self.clone();
+        }
+    }
+
+    pub fn concat(&self, b: DataType) -> Option<Self> {
+        if !matches!(self, DataType::Array(_)) && b.get_type() != self.get_type() {
+            return None;
+        }
+        let result;
+        match self {
+            DataType::Text(text) => {
+                let mut new_text = text.clone();
+                new_text.push_str(b.to_text());
+                result = DataType::Text(new_text.clone());
+            }
+            DataType::Number(num) => {
+                let new_num = num + b.to_number();
+                result = DataType::Number(new_num)
+            }
+            DataType::Array(list) => {
+                let mut new_list = list.clone();
+                new_list.push(b);
+                result = DataType::Array(new_list);
+            }
+            _ => return None,
+        };
+        return Some(result);
     }
 
     //add into
@@ -71,13 +105,46 @@ impl DataType {
             1
         } else if raw.parse::<i32>().is_ok() {
             3
-        } else if raw.to_lowercase().as_str() == "true" || raw.to_lowercase().as_str() == "true" {
+        } else if raw.to_lowercase().as_str() == "true" || raw.to_lowercase().as_str() == "false" {
             4
+        } else if raw.starts_with('[') && raw.ends_with(']') {
+            5
         } else {
             2
         };
+        if t == 5 {
+            let mut new_vec = Vec::new();
+            let raw = raw.strip_suffix(']').unwrap().strip_prefix('[').unwrap();
+            let mut open_array = false;
+            let mut sub_raw = String::new();
+            for chr in raw.chars() {
+                if chr == ',' && !open_array {
+                    let r = Self::auto_load(sub_raw.clone());
+                    if r.is_some() {
+                        new_vec.push(r.unwrap());
+                        sub_raw = String::new();
+                        continue;
+                    }
+                }
+                if chr == '[' && !open_array {
+                    open_array = true;
+                }
+                if chr == ']' && open_array {
+                    open_array = false;
+                }
+                sub_raw.push(chr);
+            }
+            if !sub_raw.is_empty() {
+                let r = Self::auto_load(sub_raw.clone());
+                if r.is_some() {
+                    new_vec.push(r.unwrap());
+                }
+            }
 
-        Self::load(t, raw)
+            Some(DataType::Array(new_vec))
+        } else {
+            Self::load(t, raw)
+        }
     }
 
     pub fn load(t: u16, raw: String) -> Option<Self> {
@@ -116,10 +183,13 @@ impl ToString for DataType {
             DataType::Boolean(boolean) => boolean.to_string(),
             DataType::Array(array) => {
                 let mut result = String::new();
+                result.push('[');
                 for value in array {
                     result.push_str(&value.to_string());
                     result.push_str(", ");
                 }
+                let mut result = result.strip_suffix(", ").unwrap().to_string();
+                result.push(']');
                 result
             }
             DataType::Document(document) => {
