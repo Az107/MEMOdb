@@ -21,7 +21,7 @@ impl MEMOdb {
     pub fn new() -> Self {
         MEMOdb {
             version: env!("CARGO_PKG_VERSION"),
-            path: "./memo.json".to_string(),
+            path: "./default.mdb".to_string(),
             collections: Vec::new(),
         }
     }

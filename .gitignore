@@ -203,3 +203,5 @@ build/
 # already existing elements were commented out
 
 #/target
+/memodb/target
+/memodb-py/target
