@@ -1,7 +1,6 @@
 mod memodb;
 
 use memodb::utils;
-use std::fmt::format;
 use std::io::Write;
 use std::path::Path;
 use std::{env, io};
@@ -17,6 +16,7 @@ fn process(collection: &mut Collection, action: &str, args: Vec<String>) {
             for (k, v) in collection.list() {
                 println!("{} => {}", k, v.to_string())
             }
+            println!("\n{} Elements", collection.count());
         }
         "set" => {
             if args.len() < 2 {
@@ -46,7 +46,7 @@ fn process(collection: &mut Collection, action: &str, args: Vec<String>) {
             if args.len() == 2 {
                 let i = args.get(1).unwrap().parse::<usize>();
                 if i.is_err() {
-                    value;
+                    println!("{} => {}", key, value.to_string());
                 } else {
                     let i = i.unwrap();
                     println!("{}[{}] => {}", key, i, value.get(i).to_string());

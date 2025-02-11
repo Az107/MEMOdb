@@ -1,5 +1,5 @@
 [package]
-name = "PyMEMOdb"
+name = "py_memodb"
 version = "0.1.0"
 edition = "2021"
 

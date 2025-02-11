@@ -1,25 +1,24 @@
-use std::sync::{Arc, Mutex};
-
 use memodb::MEMOdb;
-use pyo3::{exceptions::PyValueError, prelude::*, types::PyString};
+use pyo3::{exceptions::PyValueError, prelude::*};
+use std::sync::{Arc, Mutex};
 
 /// Wrapper en Rust para exponer MEMOdb a Python
 #[pyclass]
-struct pymemodb {
+struct Pymemodb {
     inner: Arc<Mutex<MEMOdb>>,
 }
 
 #[pyclass]
-struct collection {
+struct Collection {
     inner: Arc<Mutex<MEMOdb>>,
     name: String,
 }
 
 #[pymethods]
-impl pymemodb {
+impl Pymemodb {
     #[new]
     fn new() -> Self {
-        pymemodb {
+        Pymemodb {
             inner: Arc::new(Mutex::new(MEMOdb::new())),
         }
     }
@@ -39,17 +38,17 @@ impl pymemodb {
     }
 
     fn list_collections(&self) -> Vec<String> {
-        let mut db = self.inner.lock().unwrap();
+        let db = self.inner.lock().unwrap();
         db.get_collection_list()
     }
 
-    fn get_collection(&mut self, name: &str) -> PyResult<collection> {
+    fn get_collection(&mut self, name: &str) -> PyResult<Collection> {
         let mut db = self.inner.lock().unwrap();
         let c = db.get_collection(name);
         if c.is_none() {
             return Err(PyValueError::new_err("error getting collection"));
         }
-        let col = collection {
+        let col = Collection {
             inner: Arc::clone(&self.inner),
             name: name.to_string(),
         };
@@ -58,7 +57,7 @@ impl pymemodb {
 }
 
 #[pymethods]
-impl collection {
+impl Collection {
     fn get(&mut self, k: &str) -> PyResult<String> {
         let mut db = self.inner.lock().unwrap();
         let c = db.get_collection(self.name.as_str());
@@ -87,7 +86,7 @@ impl collection {
 }
 
 #[pymodule]
-fn PyMEMOdb(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<pymemodb>()?;
+fn py_memodb(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<Pymemodb>()?;
     Ok(())
 }
