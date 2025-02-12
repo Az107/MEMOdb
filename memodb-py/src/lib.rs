@@ -3,6 +3,7 @@ use pyo3::{
     exceptions::PyValueError,
     prelude::*,
     types::{PyDict, PyFloat, PyList, PyString},
+    IntoPyObjectExt,
 };
 use std::sync::{Arc, Mutex};
 
@@ -96,13 +97,15 @@ fn convert_py_to_data_type(py: Python<'_>, value: &PyObject) -> PyResult<memodb:
     if let Ok(b) = value.extract::<bool>(py) {
         return Ok(memodb::DataType::Boolean(b));
     }
-    // if let Ok(list) = value.downcast::<PyList>(py) {
-    //     let mut items = Vec::new();
-    //     for item in list.iter() {
-    //         items.push(convert_py_to_data_type(py, item)?);
-    //     }
-    //     return Ok(memodb::DataType::Array(items));
-    // }
+
+    if let Ok(list) = value.extract::<Py<PyList>>(py) {
+        let mut items = Vec::new();
+        let list = list.bind_borrowed(py);
+        for item in list.iter() {
+            items.push(convert_py_to_data_type(py, &item.into_py_any(py)?)?);
+        }
+        return Ok(memodb::DataType::Array(items));
+    }
     // if let Ok(dict) = value.downcast::<PyDict>() {
     //     let mut map = std::collections::HashMap::new();
     //     for (key, val) in dict.iter() {
