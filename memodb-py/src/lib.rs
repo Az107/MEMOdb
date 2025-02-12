@@ -1,5 +1,9 @@
 use memodb::MEMOdb;
-use pyo3::{exceptions::PyValueError, prelude::*};
+use pyo3::{
+    exceptions::PyValueError,
+    prelude::*,
+    types::{PyDict, PyFloat, PyList, PyString},
+};
 use std::sync::{Arc, Mutex};
 
 /// Wrapper en Rust para exponer MEMOdb a Python
@@ -56,9 +60,65 @@ impl Pymemodb {
     }
 }
 
+fn convert_data_type(py: Python<'_>, value: &memodb::DataType) -> PyResult<PyObject> {
+    match value {
+        memodb::DataType::Id(uuid) => Ok(PyString::new(py, &uuid.to_string()).into()),
+        memodb::DataType::Text(text) => Ok(PyString::new(py, text).into()),
+        memodb::DataType::Number(n) => Ok(PyFloat::new(py, *n as f64).into()),
+        memodb::DataType::Boolean(b) => {
+            let b = if *b { 1.0 } else { 0.0 };
+            return Ok(PyFloat::new(py, b).into());
+        }
+        memodb::DataType::Array(data_types) => {
+            let py_list = PyList::empty(py);
+            for item in data_types {
+                py_list.append(convert_data_type(py, item)?)?;
+            }
+            Ok(py_list.into())
+        }
+        memodb::DataType::Document(hash_map) => {
+            let py_dict = PyDict::new(py);
+            for (key, value) in hash_map {
+                py_dict.set_item(key, convert_data_type(py, value)?)?;
+            }
+            Ok(py_dict.into())
+        }
+    }
+}
+
+fn convert_py_to_data_type(py: Python<'_>, value: &PyObject) -> PyResult<memodb::DataType> {
+    if let Ok(s) = value.extract::<String>(py) {
+        return Ok(memodb::DataType::Text(s));
+    }
+    if let Ok(f) = value.extract::<i32>(py) {
+        return Ok(memodb::DataType::Number(f));
+    }
+    if let Ok(b) = value.extract::<bool>(py) {
+        return Ok(memodb::DataType::Boolean(b));
+    }
+    // if let Ok(list) = value.downcast::<PyList>(py) {
+    //     let mut items = Vec::new();
+    //     for item in list.iter() {
+    //         items.push(convert_py_to_data_type(py, item)?);
+    //     }
+    //     return Ok(memodb::DataType::Array(items));
+    // }
+    // if let Ok(dict) = value.downcast::<PyDict>() {
+    //     let mut map = std::collections::HashMap::new();
+    //     for (key, val) in dict.iter() {
+    //         let key: String = key.extract()?;
+    //         let val = convert_py_to_data_type(val)?;
+    //         map.insert(key, val);
+    //     }
+    //     return Ok(memodb::DataType::Document(map));
+    // }
+
+    Err(PyValueError::new_err("Unsupported data type"))
+}
+
 #[pymethods]
 impl Collection {
-    fn get(&mut self, k: &str) -> PyResult<String> {
+    fn get(&mut self, py: Python<'_>, k: &str) -> PyResult<PyObject> {
         let mut db = self.inner.lock().unwrap();
         let c = db.get_collection(self.name.as_str());
         if c.is_none() {
@@ -70,17 +130,19 @@ impl Collection {
             return Err(PyValueError::new_err("error getting key"));
         }
         let r = r.unwrap();
-        return Ok(r.to_string());
+        let value = convert_data_type(py, r);
+        return Ok(value.unwrap());
     }
 
-    fn set(&mut self, k: &str, v: &str) -> PyResult<()> {
+    fn set(&mut self, py: Python<'_>, k: &str, v: PyObject) -> PyResult<()> {
         let mut db = self.inner.lock().unwrap();
         let c = db.get_collection(self.name.as_str());
         if c.is_none() {
             return Err(PyValueError::new_err("error getting collection"));
         }
         let c = c.unwrap();
-        c.add(k, memodb::DataType::Text(v.to_string()));
+        let v = convert_py_to_data_type(py, &v)?;
+        c.add(k, v);
         return Ok(());
     }
 }
