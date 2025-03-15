@@ -3,10 +3,10 @@ pub fn smart_split(text: String) -> Vec<String> {
     let mut result = Vec::new();
     let mut word_finnished = true;
     for word in words {
-        let count = word.matches('"').count();
-        let count2 = word.matches("'").count();
-        let count3 = word.matches("[").count() + word.matches("]").count();
         if word_finnished {
+            let count = word.matches('"').count();
+            let count2 = word.matches("'").count();
+            let count3 = word.matches("[").count() as isize - word.matches("]").count() as isize;
             if count % 2 != 0 || count2 % 2 != 0 || count3 != 0 {
                 word_finnished = false;
             }
@@ -15,12 +15,18 @@ pub fn smart_split(text: String) -> Vec<String> {
             if let Some(last) = result.last_mut() {
                 last.push_str(" ");
                 last.push_str(word);
-                if count % 2 != 0 || count2 % 2 != 0 || count3 != 0 {
+                let count = last.matches('"').count();
+                let count2 = last.matches("'").count();
+                let count3 =
+                    last.matches("[").count() as isize - last.matches("]").count() as isize;
+
+                if count % 2 != 0 && count2 % 2 != 0 && count3 == 0 {
                     word_finnished = true;
                 }
             }
         }
     }
+    println!("result {:?}", result);
     return result;
 }
 

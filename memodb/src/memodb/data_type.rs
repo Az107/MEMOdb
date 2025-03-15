@@ -100,8 +100,9 @@ impl DataType {
         }
     }
 
-    pub fn auto_load(raw: String) -> Option<Self> {
-        let t = if Uuid::parse_str(raw.as_str()).is_ok() {
+    pub fn infer_type(raw: &str) -> u16 {
+        let raw = raw.trim();
+        if Uuid::parse_str(raw).is_ok() {
             1
         } else if raw.parse::<i32>().is_ok() {
             3
@@ -111,43 +112,11 @@ impl DataType {
             5
         } else {
             2
-        };
-        if t == 5 {
-            let mut new_vec = Vec::new();
-            let raw = raw.strip_suffix(']').unwrap().strip_prefix('[').unwrap();
-            let mut open_array = false;
-            let mut sub_raw = String::new();
-            for chr in raw.chars() {
-                if chr == ',' && !open_array {
-                    let r = Self::auto_load(sub_raw.clone());
-                    if r.is_some() {
-                        new_vec.push(r.unwrap());
-                        sub_raw = String::new();
-                        continue;
-                    }
-                }
-                if chr == '[' && !open_array {
-                    open_array = true;
-                }
-                if chr == ']' && open_array {
-                    open_array = false;
-                }
-                sub_raw.push(chr);
-            }
-            if !sub_raw.is_empty() {
-                let r = Self::auto_load(sub_raw.clone());
-                if r.is_some() {
-                    new_vec.push(r.unwrap());
-                }
-            }
-
-            Some(DataType::Array(new_vec))
-        } else {
-            Self::load(t, raw)
         }
     }
 
     pub fn load(t: u16, raw: String) -> Option<Self> {
+        let raw = raw.trim().to_string();
         match t {
             1 => {
                 let id = Uuid::parse_str(raw.as_str());
@@ -156,7 +125,7 @@ impl DataType {
                 }
                 Some(DataType::Id(id.unwrap()))
             }
-            2 => Some(DataType::Text(raw)),
+            2 => Some(DataType::Text(raw.trim_matches('"').to_string())),
             3 => {
                 let n = raw.parse::<i32>();
                 if n.is_err() {
@@ -169,6 +138,39 @@ impl DataType {
                 "false" => Some(DataType::Boolean(false)),
                 _ => None,
             },
+            5 => {
+                let mut new_vec = Vec::new();
+                let raw = raw.strip_suffix(']').unwrap().strip_prefix('[').unwrap();
+                let mut open_array = false;
+                let mut sub_raw = String::new();
+                for chr in raw.chars() {
+                    if chr == ',' && !open_array {
+                        let t = Self::infer_type(&sub_raw);
+                        let r = Self::load(t, sub_raw.clone());
+                        if r.is_some() {
+                            new_vec.push(r.unwrap());
+                            sub_raw = String::new();
+                            continue;
+                        }
+                    }
+                    if chr == '[' && !open_array {
+                        open_array = true;
+                    }
+                    if chr == ']' && open_array {
+                        open_array = false;
+                    }
+                    sub_raw.push(chr);
+                }
+                if !sub_raw.is_empty() {
+                    let t = Self::infer_type(&sub_raw);
+                    let r = Self::load(t, sub_raw.clone());
+                    if r.is_some() {
+                        new_vec.push(r.unwrap());
+                    }
+                }
+
+                Some(DataType::Array(new_vec))
+            }
             _ => None,
         }
     }
@@ -178,7 +180,7 @@ impl ToString for DataType {
     fn to_string(&self) -> String {
         match self {
             DataType::Id(id) => id.to_string(),
-            DataType::Text(text) => text.to_string(),
+            DataType::Text(text) => format!("\"{}\"", text.to_string()),
             DataType::Number(number) => number.to_string(),
             DataType::Boolean(boolean) => boolean.to_string(),
             DataType::Array(array) => {

@@ -2,12 +2,11 @@
 // MEMOdb is a in-memory database,
 // it will store the data in memory and provide a simple API to interact with it
 //
-// The MEMOdb will have a collection of documents, each document will be a HashMap<String, DataType>
 
 pub mod collection;
 mod data_type;
 pub mod utils;
-pub use collection::Collection;
+pub use collection::{Collection, KV};
 pub use data_type::DataType;
 use std::fs;
 

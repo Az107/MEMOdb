@@ -1,6 +1,6 @@
-use memodb::MEMOdb;
+use memodb::{MEMOdb, KV};
 use pyo3::{
-    exceptions::PyValueError,
+    exceptions::{PyFileNotFoundError, PyValueError},
     prelude::*,
     types::{PyDict, PyFloat, PyList, PyString},
     IntoPyObjectExt,
@@ -8,7 +8,7 @@ use pyo3::{
 use std::sync::{Arc, Mutex};
 
 /// Wrapper en Rust para exponer MEMOdb a Python
-#[pyclass]
+#[pyclass(name = "MEMOdb")]
 struct Pymemodb {
     inner: Arc<Mutex<MEMOdb>>,
 }
@@ -26,6 +26,15 @@ impl Pymemodb {
         Pymemodb {
             inner: Arc::new(Mutex::new(MEMOdb::new())),
         }
+    }
+
+    #[staticmethod]
+    fn load(path: &str) -> PyResult<Self> {
+        let db =
+            MEMOdb::load(path).map_err(|_| PyFileNotFoundError::new_err("Path can't be loaded"))?;
+        Ok(Pymemodb {
+            inner: Arc::new(Mutex::new(db)),
+        })
     }
 
     fn get_version(&self) -> &str {

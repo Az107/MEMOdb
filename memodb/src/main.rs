@@ -1,6 +1,6 @@
 mod memodb;
 
-use memodb::utils;
+use memodb::{utils, KV};
 use std::io::Write;
 use std::path::Path;
 use std::{env, io};
@@ -23,8 +23,10 @@ fn process(collection: &mut Collection, action: &str, args: Vec<String>) {
                 println!("memodb set [key] [value]")
             }
             let key = args.get(0).unwrap().as_str();
-            let value = args.get(1).unwrap().as_str();
-            let d = DataType::auto_load(value.to_string());
+            let value = args.get(1).unwrap().to_string();
+            let t = DataType::infer_type(&value);
+            println!("{} is {}", value, t);
+            let d = DataType::load(t, value);
             if d.is_none() {
                 println!("Unable to parse value");
             }
@@ -43,16 +45,31 @@ fn process(collection: &mut Collection, action: &str, args: Vec<String>) {
                 return;
             }
             let value = value.unwrap().clone();
-            if args.len() == 2 {
-                let i = args.get(1).unwrap().parse::<usize>();
-                if i.is_err() {
-                    println!("{} => {}", key, value.to_string());
-                } else {
+            if args.len() >= 1 {
+                let mut name = "key".to_string();
+                let mut value_pointer = value;
+                for arg_i in 1..args.len() {
+                    let i = args.get(arg_i).unwrap().parse::<usize>();
+                    if i.is_err() {
+                        break;
+                    }
                     let i = i.unwrap();
-                    println!("{}[{}] => {}", key, i, value.get(i).to_string());
+                    value_pointer = match &value_pointer {
+                        DataType::Array(v) => {
+                            let result = v.get(i);
+                            if result.is_none() {
+                                println!("list out of range");
+                                return;
+                            }
+                            result.unwrap().clone()
+                        }
+                        _ => break,
+                    };
+                    name.push_str(&format!("[{}]", i));
                 }
+                println!("{} => {:?}", name, value_pointer);
             } else {
-                println!("{} => {}", key, value.to_string());
+                println!("{} => {:?}", key, value);
             };
         }
         "del" => {

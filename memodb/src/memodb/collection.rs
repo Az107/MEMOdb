@@ -15,10 +15,10 @@ const ID: &str = "ID";
 // and impl especial methods for it
 pub type Document = HashMap<String, DataType>;
 
-pub trait DocumentJson: Sized {
+pub trait DocumentJson {
     fn to_json(&self) -> String;
     fn to_json_value(&self) -> Value;
-    fn from_json(json: &str) -> Result<Self, &str>;
+    fn from_json(json: &str) -> Result<Document, &str>;
 }
 
 impl DocumentJson for Document {
@@ -99,6 +99,17 @@ pub struct Collection {
     //b_tree: BNode
 }
 
+pub trait KV {
+    fn new(name: &str) -> Self;
+    fn add(&mut self, key: &str, value: DataType) -> &mut Self;
+    fn rm(&mut self, key: &str);
+    fn count(&self) -> usize;
+    fn list(&self) -> HashMap<String, DataType>;
+    fn get(&mut self, key: &str) -> Option<&DataType>;
+    fn dump(&self) -> String;
+    fn load(data: &str) -> Collection;
+}
+
 // impl DocumentJson for Collection {
 //     fn to_json_value(&self) -> Value {
 //         let mut json = serde_json::json!({
@@ -149,37 +160,37 @@ pub struct Collection {
 //     }
 // }
 
-impl Collection {
-    pub fn new(name: &str) -> Self {
+impl KV for Collection {
+    fn new(name: &str) -> Self {
         Collection {
             name: name.to_string(),
             data: HashMap::new(), //b_tree: BNode::new(),
         }
     }
 
-    pub fn add(&mut self, key: &str, value: DataType) -> &mut Self {
+    fn add(&mut self, key: &str, value: DataType) -> &mut Self {
         self.data.insert(key.to_string(), value);
         return self;
     }
 
-    pub fn rm(&mut self, key: &str) {
+    fn rm(&mut self, key: &str) {
         //self.data.remove(index);
         self.data.remove(key);
     }
 
-    pub fn count(&self) -> usize {
+    fn count(&self) -> usize {
         self.data.len()
     }
 
-    pub fn list(&self) -> HashMap<String, DataType> {
+    fn list(&self) -> HashMap<String, DataType> {
         return self.data.clone();
     }
 
-    pub fn get(&mut self, key: &str) -> Option<&DataType> {
+    fn get(&mut self, key: &str) -> Option<&DataType> {
         return self.data.get(key);
     }
 
-    pub fn dump(&self) -> String {
+    fn dump(&self) -> String {
         let mut result = String::new();
         result.push_str(format!("[{}]\n", self.name).as_str());
         for (k, v) in self.data.iter() {
@@ -198,7 +209,7 @@ impl Collection {
         return result;
     }
 
-    pub fn load(data: &str) -> Collection {
+    fn load(data: &str) -> Collection {
         let data_text = data.to_string();
         let parser = data_text.lines();
         let name = parser.clone().next();
@@ -230,11 +241,7 @@ impl Collection {
             let t = t.unwrap();
             let k = elements[1].clone();
             let raw_v = elements[2].clone();
-            let v = if t >= 5 {
-                DataType::auto_load(raw_v)
-            } else {
-                DataType::load(t, raw_v)
-            };
+            let v = DataType::load(t, raw_v);
             if v.is_none() {
                 println!("Error parsing: unresolved value");
                 continue;
