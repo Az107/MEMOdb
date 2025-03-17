@@ -1,0 +1,22 @@
+[package]
+name = "MEMOdb"
+version = "0.2.0"
+edition = "2021"
+
+
+[lib]
+name = "memodb"
+path = "src/memodb/mod.rs"
+
+
+[[bin]]
+name = "memodb"
+path = "src/main.rs"
+
+[dependencies]
+serde = "1.0.217"
+serde_json = "1.0.138"
+
+[dependencies.uuid]
+version = "1.12.1"
+features = ["v4"]
