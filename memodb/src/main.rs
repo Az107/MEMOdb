@@ -1,6 +1,8 @@
+mod command;
 mod memodb;
+mod server;
 
-use memodb::{utils, KV};
+use memodb::utils;
 use std::io::Write;
 use std::path::Path;
 use std::{env, io};
@@ -80,9 +82,6 @@ fn process(collection: &mut Collection, action: &str, args: Vec<String>) {
             collection.rm(key);
             println!("{}: Removed", key);
         }
-        "echo" => {
-            println!("{:?}", args);
-        }
         "name" => {
             println!("Collection {}", collection.name);
         }
@@ -110,7 +109,7 @@ fn main() {
             let mut buffer = String::new();
             let _ = io::stdin().read_line(&mut buffer);
             let command: Vec<String> = utils::smart_split(buffer);
-            let action = command.get(0).unwrap().as_str();
+            let action = command.get(0).unwrap();
             let args = if command.len() > 0 {
                 command.clone()[1..].to_vec()
             } else {
@@ -120,9 +119,8 @@ fn main() {
             if action == "exit" {
                 break;
             } else if action == "select" {
-                let new_selected = args[0].clone();
-                if db.get_collection_list().contains(&(new_selected)) {
-                    selected = new_selected.clone();
+                if db.get_collection_list().contains(&args[0]) {
+                    selected = args[0].clone()
                 } else {
                     println!("Collection don't exists");
                 }

@@ -160,37 +160,38 @@ pub trait KV {
 //     }
 // }
 
-impl KV for Collection {
-    fn new(name: &str) -> Self {
+// impl KV for Collection {
+impl Collection {
+    pub fn new(name: &str) -> Self {
         Collection {
             name: name.to_string(),
             data: HashMap::new(), //b_tree: BNode::new(),
         }
     }
 
-    fn add(&mut self, key: &str, value: DataType) -> &mut Self {
+    pub fn add(&mut self, key: &str, value: DataType) -> &mut Self {
         self.data.insert(key.to_string(), value);
         return self;
     }
 
-    fn rm(&mut self, key: &str) {
+    pub fn rm(&mut self, key: &str) {
         //self.data.remove(index);
         self.data.remove(key);
     }
 
-    fn count(&self) -> usize {
+    pub fn count(&self) -> usize {
         self.data.len()
     }
 
-    fn list(&self) -> HashMap<String, DataType> {
+    pub fn list(&self) -> HashMap<String, DataType> {
         return self.data.clone();
     }
 
-    fn get(&mut self, key: &str) -> Option<&DataType> {
+    pub fn get(&mut self, key: &str) -> Option<&DataType> {
         return self.data.get(key);
     }
 
-    fn dump(&self) -> String {
+    pub fn dump(&self) -> String {
         let mut result = String::new();
         result.push_str(format!("[{}]\n", self.name).as_str());
         for (k, v) in self.data.iter() {
@@ -209,7 +210,7 @@ impl KV for Collection {
         return result;
     }
 
-    fn load(data: &str) -> Collection {
+    pub fn load(data: &str) -> Collection {
         let data_text = data.to_string();
         let parser = data_text.lines();
         let name = parser.clone().next();
