@@ -10,7 +10,17 @@
 - [ ] *GET <KEY> <INDEX...>:*
 - [ ] *DEL <KEY>*:
 
-
+### Example
 ```
-client> select [collection]
+s: MEMOdb vX.Y.Z
+c: list
+s: Ok: [Collection_name]
+c: SELECT Collection_name
+s: Ok
+c: SET KEY VALUE
+s: Ok: KEY created
+c: GET KEI
+s: Err: KEI do not exist
+c: GET KEY
+s: Ok: Value
 ```

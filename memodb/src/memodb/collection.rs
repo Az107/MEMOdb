@@ -4,6 +4,7 @@ use crate::utils;
 // The collection module will provide the collection of documents for the MEMOdb
 // The collection will store the documents in memory and provide a simple API to interact with them
 // The Document will be a HashMap<String, DataType>
+//
 use super::data_type::DataType;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -14,6 +15,12 @@ const ID: &str = "ID";
 //create a trait based on HashMap<String,DataType>
 // and impl especial methods for it
 pub type Document = HashMap<String, DataType>;
+
+// impl Into<DataType> for Document {
+//     fn into(self) -> DataType {
+//         DataType::Document(self)
+//     }
+// }
 
 pub trait DocumentJson {
     fn to_json(&self) -> String;
@@ -83,8 +90,8 @@ impl DocumentJson for Document {
 macro_rules! doc {
   ( $( $key: expr => $value: expr ),* ) => {
     {
-        use super::collection::Document;
-        let mut map = Document::new();
+         use std::collections::HashMap;
+        let mut map = HashMap::new();
         $(
             map.insert($key.to_string(), DataType::from($value)); // Update this line
         )*

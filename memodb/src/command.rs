@@ -1,20 +1,20 @@
-use memodb::utils;
-use memodb::Collection;
-use memodb::DataType;
+use super::memodb::collection::Collection;
+use super::memodb::DataType;
+use super::utils;
 
-trait Command {
-    fn inter(&mut self, command: &str) -> Result<(String, DataType), &'static str>;
+use crate::doc;
+
+pub trait Command {
+    fn run(&mut self, command: &str) -> Result<DataType, &'static str>;
 }
 
 impl Command for Collection {
-    fn inter(&mut self, command: &str) -> Result<(String, DataType), &'static str> {
+    fn run(&mut self, command: &str) -> Result<DataType, &'static str> {
         let command: Vec<String> = utils::smart_split(command.to_string());
         let action = command.get(0).ok_or("Empty command")?;
         let args: Vec<String> = command.iter().skip(1).cloned().collect();
-        match action.as_str() {
-            "list" => {
-                Ok(self.list());
-            }
+        return match action.as_str() {
+            "list" => Ok(DataType::Document(self.list())),
             "set" => {
                 if args.len() < 2 {
                     return Err("No enought args");
@@ -24,6 +24,7 @@ impl Command for Collection {
                 let t = DataType::infer_type(&value);
                 let d = DataType::load(t, value).ok_or("Unable to parse value")?;
                 self.add(key, d);
+                Ok(DataType::Boolean(true))
             }
             "get" => {
                 if args.len() < 1 {
@@ -44,8 +45,7 @@ impl Command for Collection {
                             DataType::Array(v) => {
                                 let result = v.get(i);
                                 if result.is_none() {
-                                    println!("list out of range");
-                                    return Ok(());
+                                    return Ok(value_pointer.clone());
                                 }
                                 result.unwrap()
                             }
@@ -53,24 +53,21 @@ impl Command for Collection {
                         };
                         name.push_str(&format!("[{}]", i));
                     }
-                    println!("{} => {:?}", name, value_pointer);
+                    return Ok(value_pointer.clone());
                 } else {
-                    println!("{} => {:?}", key, value);
+                    return Ok(value.clone());
                 };
             }
             "del" => {
                 if args.len() < 1 {
-                    println!("memodb get [key]")
+                    return Err("No enought args");
                 }
                 let key = args.get(0).unwrap().as_str();
                 self.rm(key);
-                println!("{}: Removed", key);
+                Ok(DataType::Boolean(true))
             }
-            "name" => {
-                println!("Collection {}", self.name);
-            }
-            _ => println!("Unknown command {}", action),
-        }
-        Ok(())
+            "name" => Ok(doc!("name" => self.name.clone())),
+            _ => Err("Unknown command"),
+        };
     }
 }
