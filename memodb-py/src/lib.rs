@@ -1,4 +1,4 @@
-use memodb::{MEMOdb, KV};
+use memodb::MEMOdb;
 use pyo3::{
     exceptions::{PyFileNotFoundError, PyValueError},
     prelude::*,

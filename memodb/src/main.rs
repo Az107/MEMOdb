@@ -2,7 +2,7 @@ mod command;
 mod memodb;
 mod server;
 
-use memodb::utils;
+use memodb::{utils, DataType};
 use std::io::Write;
 use std::path::Path;
 use std::{env, io};
@@ -15,7 +15,21 @@ const DEFAULT_COLLECTION_NAME: &str = "default";
 
 fn process(collection: &mut Collection, command: &str) -> Result<String, &'static str> {
     let r = collection.run(command)?;
-    return Ok(r.to_string());
+    return Ok(format_data_type(r));
+}
+
+fn format_data_type(data: DataType) -> String {
+    match data {
+        DataType::Document(doc) => {
+            let mut r = String::new();
+            for (key, val) in doc {
+                r.push_str(&format!("{}: {}\n", &key, &format_data_type(val)));
+            }
+            r
+        }
+        // DataType::Array(list) => format!("[{}]", format_data_type(list[0].clone())),
+        _ => data.to_string(),
+    }
 }
 
 fn main() {
@@ -84,12 +98,13 @@ fn main() {
                 continue;
             }
             let r = process(db.get_collection(selected.as_str()).unwrap(), &buffer);
-            println!("{}", r.unwrap_or("0_o".to_string()));
+
+            println!("{}", r.unwrap_or("0_o".to_string())); //TODO: better print
         }
     } else {
         let command = args.clone()[1..].to_vec().join(" ");
         let r = process(
-            db.get_collection(DEFAULT_COLLECTION_NAME).unwrap(),
+            db.get_collection(DEFAULT_COLLECTION_NAME).unwrap(), //TODO: better print
             &command,
         );
         println!("{}", r.unwrap_or("0_o".to_string()));
