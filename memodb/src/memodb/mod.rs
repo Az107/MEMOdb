@@ -3,10 +3,10 @@
 // it will store the data in memory and provide a simple API to interact with it
 //
 
-pub mod collection;
+mod collection;
 mod data_type;
 pub mod utils;
-pub use collection::{Collection, KV};
+pub use collection::Collection;
 pub use data_type::DataType;
 use std::fs;
 

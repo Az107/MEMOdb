@@ -1,8 +1,7 @@
-use super::memodb::collection::Collection;
-use super::memodb::DataType;
-use super::utils;
+use memodb::utils;
 
 use crate::doc;
+use crate::memodb::{Collection, DataType};
 
 pub trait Command {
     fn run(&mut self, command: &str) -> Result<DataType, &'static str>;

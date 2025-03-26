@@ -2,21 +2,16 @@ mod command;
 mod memodb;
 mod server;
 
-use memodb::{utils, DataType};
+use command::Command;
+use memodb::{utils, Collection, DataType, MEMOdb};
 use std::io::Write;
 use std::path::Path;
 use std::{env, io};
 
-use command::Command;
-use memodb::{Collection, MEMOdb};
+use server::Server;
 
 const DEFAULT_PATH: &str = "default.mdb";
 const DEFAULT_COLLECTION_NAME: &str = "default";
-
-fn process(collection: &mut Collection, command: &str) -> Result<String, &'static str> {
-    let r = collection.run(command)?;
-    return Ok(format_data_type(r));
-}
 
 fn format_data_type(data: DataType) -> String {
     match data {
@@ -97,17 +92,29 @@ fn main() {
                 println!("No collection selected");
                 continue;
             }
-            let r = process(db.get_collection(selected.as_str()).unwrap(), &buffer);
-
-            println!("{}", r.unwrap_or("0_o".to_string())); //TODO: better print
+            let collection = db.get_collection(selected.as_str()).unwrap();
+            let r = collection.run(&buffer);
+            if r.is_ok() {
+                println!("{}", format_data_type(r.unwrap()));
+            } else {
+                println!("{:?}", r.err());
+            }
         }
     } else {
+        if args[1] == "-s" {
+            let mut server = Server::new("0.0.0.0", 1234).expect("vaia");
+            println!("Starting server on 1234");
+            let _ = server.listen();
+            return;
+        }
         let command = args.clone()[1..].to_vec().join(" ");
-        let r = process(
-            db.get_collection(DEFAULT_COLLECTION_NAME).unwrap(), //TODO: better print
-            &command,
-        );
-        println!("{}", r.unwrap_or("0_o".to_string()));
+        let collection = db.get_collection(DEFAULT_COLLECTION_NAME).unwrap();
+        let r = collection.run(&command);
+        if r.is_ok() {
+            println!("{}", format_data_type(r.unwrap()));
+        } else {
+            println!("{:?}", r.err());
+        }
     }
 
     let _ = db.dump();
