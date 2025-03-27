@@ -26,7 +26,6 @@ pub fn smart_split(text: String) -> Vec<String> {
             }
         }
     }
-    println!("result {:?}", result);
     return result;
 }
 

@@ -1,16 +1,16 @@
 [package]
-name = "MEMOdb"
+
+
+name = "CaddyDB"
 version = "0.2.0"
 edition = "2021"
-
-
 [lib]
-name = "memodb"
-path = "src/memodb/mod.rs"
+name = "caddydb"
+path = "src/caddydb/mod.rs"
 
 
 [[bin]]
-name = "memodb"
+name = "caddydb"
 path = "src/main.rs"
 
 [dependencies]

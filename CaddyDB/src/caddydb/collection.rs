@@ -1,9 +1,10 @@
 use crate::utils;
 
 // Writen by Alberto Ruiz 2024-03-08
-// The collection module will provide the collection of documents for the MEMOdb
+// The collection module will provide the collection of documents for the CaddyDB
 // The collection will store the documents in memory and provide a simple API to interact with them
 // The Document will be a HashMap<String, DataType>
+//
 use super::data_type::DataType;
 use serde_json::Value;
 use std::collections::HashMap;
@@ -14,6 +15,12 @@ const ID: &str = "ID";
 //create a trait based on HashMap<String,DataType>
 // and impl especial methods for it
 pub type Document = HashMap<String, DataType>;
+
+// impl Into<DataType> for Document {
+//     fn into(self) -> DataType {
+//         DataType::Document(self)
+//     }
+// }
 
 pub trait DocumentJson {
     fn to_json(&self) -> String;
@@ -83,8 +90,8 @@ impl DocumentJson for Document {
 macro_rules! doc {
   ( $( $key: expr => $value: expr ),* ) => {
     {
-        use super::collection::Document;
-        let mut map = Document::new();
+         use std::collections::HashMap;
+        let mut map = HashMap::new();
         $(
             map.insert($key.to_string(), DataType::from($value)); // Update this line
         )*
@@ -99,7 +106,7 @@ pub struct Collection {
     //b_tree: BNode
 }
 
-pub trait KV {
+pub trait _KV {
     fn new(name: &str) -> Self;
     fn add(&mut self, key: &str, value: DataType) -> &mut Self;
     fn rm(&mut self, key: &str);
@@ -160,37 +167,38 @@ pub trait KV {
 //     }
 // }
 
-impl KV for Collection {
-    fn new(name: &str) -> Self {
+// impl KV for Collection {
+impl Collection {
+    pub fn new(name: &str) -> Self {
         Collection {
             name: name.to_string(),
             data: HashMap::new(), //b_tree: BNode::new(),
         }
     }
 
-    fn add(&mut self, key: &str, value: DataType) -> &mut Self {
+    pub fn add(&mut self, key: &str, value: DataType) -> &mut Self {
         self.data.insert(key.to_string(), value);
         return self;
     }
 
-    fn rm(&mut self, key: &str) {
+    pub fn rm(&mut self, key: &str) {
         //self.data.remove(index);
         self.data.remove(key);
     }
 
-    fn count(&self) -> usize {
+    pub fn count(&self) -> usize {
         self.data.len()
     }
 
-    fn list(&self) -> HashMap<String, DataType> {
+    pub fn list(&self) -> HashMap<String, DataType> {
         return self.data.clone();
     }
 
-    fn get(&mut self, key: &str) -> Option<&DataType> {
+    pub fn get(&mut self, key: &str) -> Option<&DataType> {
         return self.data.get(key);
     }
 
-    fn dump(&self) -> String {
+    pub fn dump(&self) -> String {
         let mut result = String::new();
         result.push_str(format!("[{}]\n", self.name).as_str());
         for (k, v) in self.data.iter() {
@@ -209,7 +217,7 @@ impl KV for Collection {
         return result;
     }
 
-    fn load(data: &str) -> Collection {
+    pub fn load(data: &str) -> Collection {
         let data_text = data.to_string();
         let parser = data_text.lines();
         let name = parser.clone().next();

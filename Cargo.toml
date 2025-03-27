@@ -1,3 +1,3 @@
 [workspace]
-members = ["memodb", "memodb-py"]
+members = ["CaddyDB", "CaddyDB-py"]
 resolver = "2"
