@@ -1,4 +1,4 @@
-use memodb::MEMOdb;
+use caddydb::CaddyDB;
 use pyo3::{
     exceptions::{PyFileNotFoundError, PyValueError},
     prelude::*,
@@ -7,32 +7,32 @@ use pyo3::{
 };
 use std::sync::{Arc, Mutex};
 
-/// Wrapper en Rust para exponer MEMOdb a Python
-#[pyclass(name = "MEMOdb")]
-struct Pymemodb {
-    inner: Arc<Mutex<MEMOdb>>,
+/// Wrapper in Rust to expose CaddyDB for Python
+#[pyclass(name = "CaddyDB")]
+struct CaddyDBpy {
+    inner: Arc<Mutex<CaddyDB>>,
 }
 
 #[pyclass]
 struct Collection {
-    inner: Arc<Mutex<MEMOdb>>,
+    inner: Arc<Mutex<CaddyDB>>,
     name: String,
 }
 
 #[pymethods]
-impl Pymemodb {
+impl CaddyDBpy {
     #[new]
     fn new() -> Self {
-        Pymemodb {
-            inner: Arc::new(Mutex::new(MEMOdb::new())),
+        CaddyDBpy {
+            inner: Arc::new(Mutex::new(CaddyDB::new())),
         }
     }
 
     #[staticmethod]
     fn load(path: &str) -> PyResult<Self> {
-        let db =
-            MEMOdb::load(path).map_err(|_| PyFileNotFoundError::new_err("Path can't be loaded"))?;
-        Ok(Pymemodb {
+        let db = CaddyDB::load(path)
+            .map_err(|_| PyFileNotFoundError::new_err("Path can't be loaded"))?;
+        Ok(CaddyDBpy {
             inner: Arc::new(Mutex::new(db)),
         })
     }
@@ -70,23 +70,23 @@ impl Pymemodb {
     }
 }
 
-fn convert_data_type(py: Python<'_>, value: &memodb::DataType) -> PyResult<PyObject> {
+fn convert_data_type(py: Python<'_>, value: &caddydb::DataType) -> PyResult<PyObject> {
     match value {
-        memodb::DataType::Id(uuid) => Ok(PyString::new(py, &uuid.to_string()).into()),
-        memodb::DataType::Text(text) => Ok(PyString::new(py, text).into()),
-        memodb::DataType::Number(n) => Ok(PyFloat::new(py, *n as f64).into()),
-        memodb::DataType::Boolean(b) => {
+        caddydb::DataType::Id(uuid) => Ok(PyString::new(py, &uuid.to_string()).into()),
+        caddydb::DataType::Text(text) => Ok(PyString::new(py, text).into()),
+        caddydb::DataType::Number(n) => Ok(PyFloat::new(py, *n as f64).into()),
+        caddydb::DataType::Boolean(b) => {
             let b = if *b { 1.0 } else { 0.0 };
             return Ok(PyFloat::new(py, b).into());
         }
-        memodb::DataType::Array(data_types) => {
+        caddydb::DataType::Array(data_types) => {
             let py_list = PyList::empty(py);
             for item in data_types {
                 py_list.append(convert_data_type(py, item)?)?;
             }
             Ok(py_list.into())
         }
-        memodb::DataType::Document(hash_map) => {
+        caddydb::DataType::Document(hash_map) => {
             let py_dict = PyDict::new(py);
             for (key, value) in hash_map {
                 py_dict.set_item(key, convert_data_type(py, value)?)?;
@@ -96,15 +96,15 @@ fn convert_data_type(py: Python<'_>, value: &memodb::DataType) -> PyResult<PyObj
     }
 }
 
-fn convert_py_to_data_type(py: Python<'_>, value: &PyObject) -> PyResult<memodb::DataType> {
+fn convert_py_to_data_type(py: Python<'_>, value: &PyObject) -> PyResult<caddydb::DataType> {
     if let Ok(s) = value.extract::<String>(py) {
-        return Ok(memodb::DataType::Text(s));
+        return Ok(caddydb::DataType::Text(s));
     }
     if let Ok(f) = value.extract::<i32>(py) {
-        return Ok(memodb::DataType::Number(f));
+        return Ok(caddydb::DataType::Number(f));
     }
     if let Ok(b) = value.extract::<bool>(py) {
-        return Ok(memodb::DataType::Boolean(b));
+        return Ok(caddydb::DataType::Boolean(b));
     }
 
     if let Ok(list) = value.extract::<Py<PyList>>(py) {
@@ -113,7 +113,7 @@ fn convert_py_to_data_type(py: Python<'_>, value: &PyObject) -> PyResult<memodb:
         for item in list.iter() {
             items.push(convert_py_to_data_type(py, &item.into_py_any(py)?)?);
         }
-        return Ok(memodb::DataType::Array(items));
+        return Ok(caddydb::DataType::Array(items));
     }
     // if let Ok(dict) = value.downcast::<PyDict>() {
     //     let mut map = std::collections::HashMap::new();
@@ -160,7 +160,7 @@ impl Collection {
 }
 
 #[pymodule]
-fn py_memodb(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    m.add_class::<Pymemodb>()?;
+fn caddydb_py(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_class::<CaddyDBpy>()?;
     Ok(())
 }

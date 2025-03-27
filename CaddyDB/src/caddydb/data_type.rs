@@ -1,5 +1,5 @@
 // Written by Alberto Ruiz 2024-03-08
-// The data type module will provide the data types for the MEMOdb
+// The data type module will provide the data types for the CaddyDB
 // this will be store several types of data, like text, numbers, dates, arrays and documents
 //
 // The data type will be used to store the data in the documents

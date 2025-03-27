@@ -121,7 +121,7 @@ dist
 .AppleDouble
 .LSOverride
 
-# Icon must end with two 
+# Icon must end with two
 Icon
 
 
@@ -203,5 +203,5 @@ build/
 # already existing elements were commented out
 
 #/target
-/memodb/target
-/memodb-py/target
+/caddydb/target
+/caddydb-py/target

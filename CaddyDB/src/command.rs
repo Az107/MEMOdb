@@ -1,7 +1,7 @@
-use memodb::utils;
+use caddydb::utils;
 
+use crate::caddydb::{Collection, DataType};
 use crate::doc;
-use crate::memodb::{Collection, DataType};
 
 pub trait Command {
     fn run(&mut self, command: &str) -> Result<DataType, &'static str>;
@@ -14,6 +14,7 @@ impl Command for Collection {
         let args: Vec<String> = command.iter().skip(1).cloned().collect();
         return match action.as_str() {
             "list" => Ok(DataType::Document(self.list())),
+            "count" => Ok(DataType::Number(self.count() as i32)),
             "set" => {
                 if args.len() < 2 {
                     return Err("No enought args");

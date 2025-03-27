@@ -1,7 +1,6 @@
 // Written by Alberto Ruiz 2024-03-08
-// MEMOdb is a in-memory database,
+// CaddyDB is a in-memory database,
 // it will store the data in memory and provide a simple API to interact with it
-//
 
 mod collection;
 mod data_type;
@@ -10,15 +9,15 @@ pub use collection::Collection;
 pub use data_type::DataType;
 use std::fs;
 
-pub struct MEMOdb {
+pub struct CaddyDB {
     pub version: &'static str,
     pub path: String,
     collections: Vec<Collection>,
 }
 
-impl MEMOdb {
+impl CaddyDB {
     pub fn new() -> Self {
-        MEMOdb {
+        CaddyDB {
             version: env!("CARGO_PKG_VERSION"),
             path: "./default.mdb".to_string(),
             collections: Vec::new(),
@@ -55,7 +54,7 @@ impl MEMOdb {
             collections.push(Collection::load(page.as_str()));
         }
 
-        Ok(MEMOdb {
+        Ok(CaddyDB {
             version: env!("CARGO_PKG_VERSION"),
             collections,
             path: path.to_string(),
@@ -121,29 +120,29 @@ impl MEMOdb {
 //TEST
 #[cfg(test)]
 #[test]
-fn test_memodb() {
-    let mut memodb = MEMOdb::new();
-    let r1 = memodb.create_collection("users").is_ok();
-    let r2 = memodb.create_collection("posts").is_ok();
+fn test_caddydb() {
+    let mut caddydb = CaddyDB::new();
+    let r1 = caddydb.create_collection("users").is_ok();
+    let r2 = caddydb.create_collection("posts").is_ok();
     assert!(r1);
     assert!(r2);
-    assert_eq!(memodb.collections.len(), 2);
-    assert_eq!(memodb.collections[0].name, "users");
-    assert_eq!(memodb.collections[1].name, "posts");
-    assert_eq!(memodb.get_collection("users").unwrap().name, "users");
-    assert_eq!(memodb.get_collection("posts").unwrap().name, "posts");
-    assert_eq!(memodb.get_collection_list().len(), 2);
-    memodb.remove_collection("users".to_string());
-    assert_eq!(memodb.collections.len(), 1);
-    memodb.remove_collection("posts".to_string());
-    assert_eq!(memodb.collections.len(), 0);
+    assert_eq!(caddydb.collections.len(), 2);
+    assert_eq!(caddydb.collections[0].name, "users");
+    assert_eq!(caddydb.collections[1].name, "posts");
+    assert_eq!(caddydb.get_collection("users").unwrap().name, "users");
+    assert_eq!(caddydb.get_collection("posts").unwrap().name, "posts");
+    assert_eq!(caddydb.get_collection_list().len(), 2);
+    caddydb.remove_collection("users".to_string());
+    assert_eq!(caddydb.collections.len(), 1);
+    caddydb.remove_collection("posts".to_string());
+    assert_eq!(caddydb.collections.len(), 0);
 }
 
 // #[test]
 // fn add_document() {
-//     let mut memodb = MEMOdb::new();
-//     let _ = memodb.create_collection("users");
-//     let get_collection = memodb.get_collection("users").unwrap();
+//     let mut caddydb = caddydb::new();
+//     let _ = caddydb.create_collection("users");
+//     let get_collection = caddydb.get_collection("users").unwrap();
 //     let mut collection = get_collection.borrow_mut();
 //     let id1 = collection.add("John", doc! {"name" => "John", "age" => 30});
 //     let id2 = collection.add("Jane", doc! {"name" => "Jane", "age" => 25});

@@ -1,9 +1,9 @@
+mod caddydb;
 mod command;
-mod memodb;
 mod server;
 
+use caddydb::{utils, CaddyDB, DataType};
 use command::Command;
-use memodb::{utils, Collection, DataType, MEMOdb};
 use std::io::Write;
 use std::path::Path;
 use std::{env, io};
@@ -28,13 +28,13 @@ fn format_data_type(data: DataType) -> String {
 }
 
 fn main() {
-    let mut db = MEMOdb::new();
+    let mut db = CaddyDB::new();
     if !Path::new(DEFAULT_PATH).exists() {
         db.path = DEFAULT_PATH.to_string();
     } else {
-        db = MEMOdb::load(DEFAULT_PATH).unwrap();
+        db = CaddyDB::load(DEFAULT_PATH).unwrap();
     }
-    println!("MEMOdb {}", db.version);
+    println!("CaddyDB {}", db.version);
     if db.get_collection(DEFAULT_COLLECTION_NAME).is_none() {
         let _ = db.create_collection(DEFAULT_COLLECTION_NAME);
     }

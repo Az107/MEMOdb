@@ -1,5 +1,5 @@
 use crate::command::Command;
-use crate::MEMOdb;
+use crate::CaddyDB;
 use std::{
     io::{BufRead, BufReader, Write},
     net::{SocketAddr, TcpListener},
@@ -9,12 +9,12 @@ use std::{
 
 pub struct Server {
     addr: SocketAddr,
-    db: Arc<Mutex<MEMOdb>>,
+    db: Arc<Mutex<CaddyDB>>,
 }
 
 impl Server {
     pub fn new(host: &str, port: usize) -> Result<Self, &'static str> {
-        let db = MEMOdb::load("default.mdb").unwrap();
+        let db = CaddyDB::load("default.mdb").unwrap();
         let server = Server {
             addr: format!("{}:{}", host, port)
                 .parse()
@@ -35,7 +35,7 @@ impl Server {
             thread::spawn(move || {
                 let mut socket = socket.unwrap();
                 println!("new client");
-                let _ = socket.write_all("MEMOdb\n".as_bytes());
+                let _ = socket.write_all("CaddyDB\n".as_bytes());
                 let mut reader = BufReader::new(socket.try_clone().unwrap());
                 loop {
                     let mut buff = String::new();

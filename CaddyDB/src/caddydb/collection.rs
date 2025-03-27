@@ -1,7 +1,7 @@
 use crate::utils;
 
 // Writen by Alberto Ruiz 2024-03-08
-// The collection module will provide the collection of documents for the MEMOdb
+// The collection module will provide the collection of documents for the CaddyDB
 // The collection will store the documents in memory and provide a simple API to interact with them
 // The Document will be a HashMap<String, DataType>
 //
@@ -106,7 +106,7 @@ pub struct Collection {
     //b_tree: BNode
 }
 
-pub trait KV {
+pub trait _KV {
     fn new(name: &str) -> Self;
     fn add(&mut self, key: &str, value: DataType) -> &mut Self;
     fn rm(&mut self, key: &str);
