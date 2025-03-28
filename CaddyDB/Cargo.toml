@@ -4,6 +4,7 @@
 name = "CaddyDB"
 version = "0.2.0"
 edition = "2021"
+
 [lib]
 name = "caddydb"
 path = "src/caddydb/mod.rs"
